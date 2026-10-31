@@ -16,5 +16,5 @@ class SyncOutbox extends Table {
   TextColumn get status => text().withDefault(const Constant('pending'))();
   TextColumn get lastErrorCode => text().nullable()();
   @override
-  Set<Column<Object>> get primaryKey => {operationId};
+  Set<Column> get primaryKey => {operationId};
 }
