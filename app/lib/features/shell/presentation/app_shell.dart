@@ -46,7 +46,7 @@ class _AppShellState extends State<AppShell> {
   Widget _currentPage() {
     if (_index == 1) {
       return AnimalListPage(
-        key: ValueKey(_workspaceModeKey),
+        key: ValueKey(_mode),
         database: widget.database,
         workspaceId: widget.workspaceIds[_mode]!,
       );
