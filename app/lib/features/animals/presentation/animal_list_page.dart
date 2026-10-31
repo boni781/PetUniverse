@@ -369,10 +369,14 @@ class _AnimalFormDialogState extends State<_AnimalFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final availableWidth = (MediaQuery.sizeOf(context).width - 56)
+        .clamp(240.0, 420.0);
+
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       title: const Text('Tambah profil hewan'),
       content: SizedBox(
-        width: 420,
+        width: availableWidth,
         child: Form(
           key: _formKey,
           child: Column(
