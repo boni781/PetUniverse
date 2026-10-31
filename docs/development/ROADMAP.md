@@ -7,6 +7,7 @@ The roadmap is ordered by dependencies. Planned work is not complete until imple
 - [ ] Finalize PRD and scope.
 - [ ] Define Personal and Professional screen flows.
 - [ ] Define role permissions.
+- [ ] Review and approve the proposed logical data model (`docs/architecture/DATA_MODEL.md`).
 - [ ] Finalize species and dynamic attribute model.
 - [ ] Define individual and group behavior.
 - [ ] Finalize habitat model and assignment history.
