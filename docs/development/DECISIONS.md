@@ -22,11 +22,12 @@ This file records agreed project direction. Add dated entries when decisions are
 
 ## Pending decisions
 
-- UI/UX navigation and visual system.
+- UI/UX navigation and visual system (draft screen flows in `docs/product/SCREEN_FLOWS.md`; review required).
 - Final Flutter architecture and package selection.
 - Local database technology.
 - Backend and cloud database technology.
 - Review and approve the proposed logical data model in `docs/architecture/DATA_MODEL.md`.
+- Review and approve the animal profile and group creation flows in `docs/product/SCREEN_FLOWS.md`.
 - Dynamic attribute schema format and version compatibility.
 - Conflict-resolution policy by record type.
 - Authentication providers.
