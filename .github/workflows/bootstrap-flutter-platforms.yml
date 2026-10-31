@@ -1,0 +1,78 @@
+name: Bootstrap Flutter Platforms
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bootstrap-flutter-platforms.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-platforms:
+    name: Generate Android and iOS project folders
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          cache-dependency-path: app/pubspec.yaml
+
+      - name: Generate native platform folders
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -d app/android && -d app/ios ]]; then
+            echo "Android and iOS folders already exist; nothing to generate."
+            exit 0
+          fi
+
+          if [[ -e app/android || -e app/ios ]]; then
+            echo "Only one native platform folder exists. Resolve the partial scaffold before continuing."
+            exit 1
+          fi
+
+          temp_root="$(mktemp -d)"
+          trap 'rm -rf "$temp_root"' EXIT
+
+          flutter create \
+            --platforms=android,ios \
+            --org=com.boni781 \
+            --project-name=pet_universe \
+            --no-pub \
+            "$temp_root/pet_universe"
+
+          cp -a "$temp_root/pet_universe/android" app/
+          cp -a "$temp_root/pet_universe/ios" app/
+          cp "$temp_root/pet_universe/.metadata" app/.metadata
+          cp "$temp_root/pet_universe/.gitignore" app/.gitignore
+
+      - name: Resolve dependencies and verify app
+        working-directory: app
+        run: |
+          flutter pub get
+          flutter analyze --fatal-infos
+          flutter test
+
+      - name: Commit generated platform files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/android app/ios app/.metadata app/.gitignore app/pubspec.lock
+
+          if git diff --cached --quiet; then
+            echo "No generated files to commit."
+          else
+            git commit -m "build: generate Flutter Android and iOS scaffolding"
+            git push
+          fi
