@@ -1,4 +1,4 @@
-import 'dart:ui' show Size;
+import 'dart:ui' show Offset, Size;
 
 import 'package:flutter/material.dart' show SingleChildScrollView;
 import 'package:flutter_test/flutter_test.dart';
