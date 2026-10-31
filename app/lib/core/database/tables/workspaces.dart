@@ -10,5 +10,5 @@ class Workspaces extends Table {
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
   @override
-  Set<Column<Object>> get primaryKey => {id};
+  Set<Column> get primaryKey => {id};
 }
