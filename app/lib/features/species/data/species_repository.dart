@@ -9,7 +9,7 @@ class SpeciesRepository {
   final AppDatabase _database;
   static const Uuid _uuid = Uuid();
 
-  Stream<List<SpeciesData>> watchAvailableSpecies(String workspaceId) {
+  watchAvailableSpecies(String workspaceId) {
     return (_database.select(_database.species)
           ..where(
             (table) =>
