@@ -259,7 +259,7 @@ class _WorkspaceCard extends StatelessWidget {
               ),
               const SizedBox(width: 9),
               Text(
-                'Ruang ' + mode.label,
+                'Ruang ${mode.label}',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
