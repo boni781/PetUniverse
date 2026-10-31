@@ -41,3 +41,35 @@ An Android SDK and emulator/device are required to run Android. Building or runn
 ## Package identity
 
 The provisional Dart package name is `pet_universe`. The provisional native organization identifier is `com.boni781`. Confirm the final Android application ID and iOS bundle identifier before store publication.
+
+
+## Local database development
+
+PetUniverse uses Drift over SQLite for the local-first data layer. The first schema contains local users, workspaces and memberships, species definitions, individual/group profiles, habitats and assignment history, and a transactional sync outbox.
+
+Run these commands from the `app` directory:
+
+```powershell
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+flutter analyze --fatal-infos
+flutter test
+```
+
+### Run the Web preview
+
+The Drift Web database uses version-matched WebAssembly and worker assets. From the repository root, after Web support has been generated with `flutter create . --platforms web`, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_drift_web.ps1
+cd app
+flutter run -d chrome
+```
+
+The script downloads the Drift 2.35.3 worker and SQLite WASM assets and checks their SHA-256 hashes before installing them in `app/web`. If the app reports that the WASM or worker file is missing, run the setup script again.
+
+### First local data test
+
+Open **Hewan** and choose **Tambah hewan**. Create an individual or group profile. The profile, its subtype row, and a pending sync-outbox operation are written in one local database transaction. The outbox is only a local queue at this stage; no cloud sync is configured.
+
+The Web preview stores its local database in browser-managed storage. Android/iOS use the app-private database location provided by Drift Flutter. These are separate local installations and do not share data until cloud synchronization is implemented.
