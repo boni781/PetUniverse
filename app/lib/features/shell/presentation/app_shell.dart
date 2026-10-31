@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/database/app_database.dart';
 import '../../../core/workspace/workspace_mode.dart';
+import '../../animals/presentation/animal_list_page.dart';
 import '../../home/presentation/home_page.dart';
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({
+    required this.database,
+    required this.workspaceIds,
+    super.key,
+  });
+
+  final AppDatabase database;
+  final Map<WorkspaceMode, String> workspaceIds;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -35,6 +44,13 @@ class _AppShellState extends State<AppShell> {
   void _setMode(WorkspaceMode mode) => setState(() => _mode = mode);
 
   Widget _currentPage() {
+    if (_index == 1) {
+      return AnimalListPage(
+        key: ValueKey(_workspaceModeKey),
+        database: widget.database,
+        workspaceId: widget.workspaceIds[_mode]!,
+      );
+    }
     if (_index == 0) {
       return HomePage(
         mode: _mode,
