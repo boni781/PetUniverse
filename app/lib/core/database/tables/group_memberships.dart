@@ -5,7 +5,9 @@ import 'workspaces.dart';
 class GroupMemberships extends Table {
   TextColumn get id => text()();
   TextColumn get workspaceId => text().references(Workspaces, #id)();
+  @ReferenceName('membershipsAsGroup')
   TextColumn get groupProfileId => text().references(AnimalProfiles, #id)();
+  @ReferenceName('membershipsAsIndividual')
   TextColumn get individualProfileId => text().references(AnimalProfiles, #id)();
   DateTimeColumn get validFrom => dateTime()();
   DateTimeColumn get validTo => dateTime().nullable()();
