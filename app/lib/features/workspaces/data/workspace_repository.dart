@@ -43,18 +43,25 @@ class WorkspaceRepository {
     if (existing != null) return existing.id;
 
     final workspaceId = _uuid.v4();
-    final userId = _uuid.v4();
+    final generatedUserId = _uuid.v4();
     final now = DateTime.now().toUtc();
 
     await _database.transaction(() async {
-      await _database.into(_database.appUsers).insert(
-            AppUsersCompanion.insert(
-              id: userId,
-              displayName: 'Pemilik Perangkat',
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
+      final localOwner = await (_database.select(_database.appUsers)
+            ..limit(1))
+          .getSingleOrNull();
+      final userId = localOwner?.id ?? generatedUserId;
+
+      if (localOwner == null) {
+        await _database.into(_database.appUsers).insert(
+              AppUsersCompanion.insert(
+                id: userId,
+                displayName: 'Pemilik Perangkat',
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+      }
 
       await _database.into(_database.workspaces).insert(
             WorkspacesCompanion.insert(
