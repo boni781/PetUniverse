@@ -143,11 +143,15 @@ class _SideMenu extends StatelessWidget {
                 child: Icon(Icons.pets_rounded, color: colors.onPrimaryContainer),
               ),
               const SizedBox(width: 10),
-              Text(
-                'PetUniverse',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+              Expanded(
+                child: Text(
+                  'PetUniverse',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
               ),
             ],
           ),
@@ -202,13 +206,17 @@ class _SideMenu extends StatelessWidget {
                                     : colors.onSurfaceVariant,
                               ),
                               const SizedBox(width: 11),
-                              Text(
-                                item.label,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: selected == item.index
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
-                                    ),
+                              Expanded(
+                                child: Text(
+                                  item.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        fontWeight: selected == item.index
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                      ),
+                                ),
                               ),
                             ],
                           ),
@@ -224,11 +232,15 @@ class _SideMenu extends StatelessWidget {
             children: [
               Icon(Icons.cloud_off_outlined, color: colors.primary, size: 18),
               const SizedBox(width: 8),
-              Text(
-                'Mode offline-first',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: colors.onSurfaceVariant,
-                    ),
+              Expanded(
+                child: Text(
+                  'Mode offline-first',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                ),
               ),
             ],
           ),
