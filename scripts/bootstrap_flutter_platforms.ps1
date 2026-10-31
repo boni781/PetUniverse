@@ -28,35 +28,42 @@ if (-not (Test-Path (Join-Path $appDir "pubspec.yaml"))) {
     throw "app/pubspec.yaml was not found. Run this script from a valid PetUniverse checkout."
 }
 
-if ((Test-Path $androidDir) -and (Test-Path $iosDir)) {
-    Write-Host "Android and iOS folders already exist. No scaffold changes were made." -ForegroundColor Green
-    exit 0
-}
+$hasAndroid = Test-Path $androidDir
+$hasIos = Test-Path $iosDir
 
-if ((Test-Path $androidDir) -or (Test-Path $iosDir)) {
+if ($hasAndroid -xor $hasIos) {
     throw "Only one native platform folder exists. Resolve the partial scaffold manually before continuing."
 }
 
-$tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("petuniverse_flutter_" + [guid]::NewGuid().ToString("N"))
-$generatedProject = Join-Path $tempRoot "pet_universe"
+$tempRoot = $null
 
 try {
-    New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+    if (-not ($hasAndroid -and $hasIos)) {
+        $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("petuniverse_flutter_" + [guid]::NewGuid().ToString("N"))
+        $generatedProject = Join-Path $tempRoot "pet_universe"
 
-    Write-Host "Generating Android and iOS platform scaffolding..." -ForegroundColor Cyan
-    Invoke-Flutter -Arguments @(
-        "create",
-        "--platforms=android,ios",
-        "--org=com.boni781",
-        "--project-name=pet_universe",
-        "--no-pub",
-        $generatedProject
-    )
+        New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
 
-    Copy-Item -Path (Join-Path $generatedProject "android") -Destination $appDir -Recurse
-    Copy-Item -Path (Join-Path $generatedProject "ios") -Destination $appDir -Recurse
-    Copy-Item -Path (Join-Path $generatedProject ".metadata") -Destination $appDir
-    Copy-Item -Path (Join-Path $generatedProject ".gitignore") -Destination (Join-Path $appDir ".gitignore")
+        Write-Host "Generating Android and iOS platform scaffolding..." -ForegroundColor Cyan
+        Invoke-Flutter -Arguments @(
+            "create",
+            "--platforms=android,ios",
+            "--org=com.boni781",
+            "--project-name=pet_universe",
+            "--no-pub",
+            $generatedProject
+        )
+
+        Copy-Item -Path (Join-Path $generatedProject "android") -Destination $appDir -Recurse
+        Copy-Item -Path (Join-Path $generatedProject "ios") -Destination $appDir -Recurse
+        Copy-Item -Path (Join-Path $generatedProject ".metadata") -Destination $appDir
+        Copy-Item -Path (Join-Path $generatedProject ".gitignore") -Destination (Join-Path $appDir ".gitignore")
+
+        Write-Host "Native Android and iOS folders created." -ForegroundColor Green
+    }
+    else {
+        Write-Host "Android and iOS folders already exist. Skipping generation and continuing verification." -ForegroundColor Yellow
+    }
 
     Push-Location $appDir
     try {
@@ -74,12 +81,12 @@ try {
     }
 
     Write-Host ""
-    Write-Host "Flutter project scaffolding completed." -ForegroundColor Green
+    Write-Host "Flutter project scaffolding and verification completed." -ForegroundColor Green
     Write-Host "Android and iOS folders are ready."
     Write-Host "Note: iOS builds require macOS and Xcode."
 }
 finally {
-    if (Test-Path $tempRoot) {
+    if ($tempRoot -and (Test-Path $tempRoot)) {
         Remove-Item -Path $tempRoot -Recurse -Force
     }
 }
