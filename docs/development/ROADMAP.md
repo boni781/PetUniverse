@@ -5,11 +5,11 @@ The roadmap is ordered by dependencies. Planned work is not complete until imple
 ## Phase 0 — Product and technical definition
 
 - [ ] Finalize PRD and scope.
-- [ ] Define Personal and Professional screen flows.
+- [ ] Review and approve Personal and Professional screen flows (`docs/product/SCREEN_FLOWS.md`).
 - [ ] Define role permissions.
 - [ ] Review and approve the proposed logical data model (`docs/architecture/DATA_MODEL.md`).
 - [ ] Finalize species and dynamic attribute model.
-- [ ] Define individual and group behavior.
+- [ ] Review and approve individual and group form behavior (`docs/product/SCREEN_FLOWS.md`).
 - [ ] Finalize habitat model and assignment history.
 - [ ] Define local/cloud architecture.
 - [ ] Define synchronization and conflict policy.
