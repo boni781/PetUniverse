@@ -19,5 +19,5 @@ class SpeciesAttributeDefinitions extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   @override
-  Set<Column<Object>> get primaryKey => {id};
+  Set<Column> get primaryKey => {id};
 }
