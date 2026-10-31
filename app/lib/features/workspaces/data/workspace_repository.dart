@@ -2,8 +2,6 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
-import '../../../core/database/tables/app_users.dart';
-import '../../../core/database/tables/workspaces.dart';
 import '../../../core/workspace/workspace_mode.dart';
 
 class WorkspaceRepository {
