@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/workspace/workspace_mode.dart';
+import '../../animals/data/animal_repository.dart';
 import '../../animals/presentation/animal_list_page.dart';
 import '../../home/presentation/home_page.dart';
 
@@ -22,6 +23,13 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _index = 0;
   WorkspaceMode _mode = WorkspaceMode.personal;
+  late final AnimalRepository _animalRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    _animalRepository = AnimalRepository(widget.database);
+  }
 
   static const _mobile = [
     _Destination(0, 'Beranda', Icons.space_dashboard_outlined, Icons.space_dashboard),
@@ -52,11 +60,18 @@ class _AppShellState extends State<AppShell> {
       );
     }
     if (_index == 0) {
-      return HomePage(
-        mode: _mode,
-        onModeChanged: _setMode,
-        onOpenAnimals: () => _go(1),
-        onOpenSchedule: () => _go(3),
+      final workspaceId = widget.workspaceIds[_mode]!;
+      return StreamBuilder<int>(
+        stream: _animalRepository.watchProfileCount(workspaceId),
+        builder: (context, snapshot) {
+          return HomePage(
+            mode: _mode,
+            animalProfileCount: snapshot.data ?? 0,
+            onModeChanged: _setMode,
+            onOpenAnimals: () => _go(1),
+            onOpenSchedule: () => _go(3),
+          );
+        },
       );
     }
     return _SectionPage(index: _index, mode: _mode, onNavigate: _go);
