@@ -15,5 +15,5 @@ class Habitats extends Table {
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
   @override
-  Set<Column> get primaryKey => {id};
+  Set<Column<Object>> get primaryKey => {id};
 }
