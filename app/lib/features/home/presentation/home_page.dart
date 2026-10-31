@@ -94,7 +94,7 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Wrap(
+                  const Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: const [
