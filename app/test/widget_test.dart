@@ -1,5 +1,6 @@
 import 'dart:ui' show Size;
 
+import 'package:flutter/material.dart' show SingleChildScrollView;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pet_universe/pet_universe_app.dart';
 
