@@ -9,5 +9,5 @@ class GroupDetails extends Table {
   DateTimeColumn get countObservedAt => dateTime().nullable()();
   TextColumn get countNote => text().nullable()();
   @override
-  Set<Column<Object>> get primaryKey => {animalProfileId};
+  Set<Column> get primaryKey => {animalProfileId};
 }
