@@ -1,0 +1,38 @@
+{
+  "project_name": "PetUniverse",
+  "github_owner": "boni781",
+  "github_repo": "PetUniverse",
+  "release_channel": "stable",
+  "versioning": {
+    "app_version": "0.1.0",
+    "content_version": "0.1.0",
+    "schema_version": 1
+  },
+  "platforms": {
+    "android": {
+      "enabled": true,
+      "build_apk": true,
+      "build_aab": true
+    },
+    "ios": {
+      "enabled": true,
+      "build_ipa": true,
+      "runner": "macos"
+    }
+  },
+  "packages": {
+    "content_zip": true,
+    "manifest": true,
+    "checksums": true
+  },
+  "git": {
+    "remote": "origin",
+    "branch": "main",
+    "commit_metadata": true
+  },
+  "release": {
+    "draft": true,
+    "prerelease": false,
+    "require_confirmation": true
+  }
+}
