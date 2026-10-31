@@ -10,5 +10,5 @@ class IndividualDetails extends Table {
   TextColumn get lifeStageCode => text().nullable()();
   TextColumn get lifeStageSource => text().nullable()();
   @override
-  Set<Column> get primaryKey => {animalProfileId};
+  Set<Column<Object>> get primaryKey => {animalProfileId};
 }
