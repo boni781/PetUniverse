@@ -5,6 +5,7 @@ import '../../../core/workspace/workspace_mode.dart';
 class HomePage extends StatelessWidget {
   const HomePage({
     required this.mode,
+    required this.animalProfileCount,
     required this.onModeChanged,
     required this.onOpenAnimals,
     required this.onOpenSchedule,
@@ -12,6 +13,7 @@ class HomePage extends StatelessWidget {
   });
 
   final WorkspaceMode mode;
+  final int animalProfileCount;
   final ValueChanged<WorkspaceMode> onModeChanged;
   final VoidCallback onOpenAnimals;
   final VoidCallback onOpenSchedule;
@@ -72,13 +74,15 @@ class HomePage extends StatelessWidget {
                         children: [
                           SizedBox(
                             width: width,
-                            child: const _MetricCard(
+                            child: _MetricCard(
                               icon: Icons.pets_rounded,
-                              label: 'Total hewan',
-                              value: '0',
-                              detail: 'Belum ada profil',
-                              tint: Color(0xFFDDF5EF),
-                              iconColor: Color(0xFF176D5B),
+                              label: 'Total profil',
+                              value: '$animalProfileCount',
+                              detail: animalProfileCount == 0
+                                  ? 'Belum ada profil'
+                                  : 'Profil tersimpan di perangkat',
+                              tint: const Color(0xFFDDF5EF),
+                              iconColor: const Color(0xFF176D5B),
                             ),
                           ),
                           SizedBox(
