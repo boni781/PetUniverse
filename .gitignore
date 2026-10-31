@@ -1,0 +1,75 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+**/captures/
+*.jks
+*.keystore
+
+# iOS / macOS
+**/Pods/
+**/.symlinks/
+**/Flutter/ephemeral/
+ios/Flutter/.last_build_id
+DerivedData/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+credentials.json
+secrets/
+**/secrets/**
+
+# Local databases and user data
+*.db
+*.sqlite
+*.sqlite3
+user-data/
+attachments/
+local-backups/
+
+# Python tooling
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build and release artifacts
+release-output/
+artifacts/
+*.apk
+*.aab
+*.ipa
+*.zip
+
+# OS and logs
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
