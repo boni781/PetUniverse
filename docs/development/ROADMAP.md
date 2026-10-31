@@ -6,13 +6,13 @@ The roadmap is ordered by dependencies. Planned work is not complete until imple
 
 - [ ] Finalize PRD and scope.
 - [ ] Review and approve Personal and Professional screen flows (`docs/product/SCREEN_FLOWS.md`).
-- [ ] Define role permissions.
+- [ ] Review and approve the role permission matrix (`docs/security/ROLE_PERMISSION_MATRIX.md`).
 - [ ] Review and approve the proposed logical data model (`docs/architecture/DATA_MODEL.md`).
 - [ ] Finalize species and dynamic attribute model.
 - [ ] Review and approve individual and group form behavior (`docs/product/SCREEN_FLOWS.md`).
 - [ ] Finalize habitat model and assignment history.
-- [ ] Define local/cloud architecture.
-- [ ] Define synchronization and conflict policy.
+- [ ] Review and approve the proposed Drift/SQLite + Supabase storage architecture (`docs/architecture/STORAGE_AND_SYNC.md`); validate with a non-production proof of concept.
+- [ ] Finalize synchronization API, cursor semantics, and conflict policy by record type.
 - [ ] Define privacy, retention, and backup requirements.
 - [ ] Define acceptance tests.
 
@@ -23,7 +23,7 @@ The roadmap is ordered by dependencies. Planned work is not complete until imple
 - [ ] Add design system and theme.
 - [ ] Add environment/configuration handling.
 - [ ] Add automated linting and test workflow.
-- [ ] Add local persistence layer.
+- [ ] Add Drift/SQLite local persistence after architecture approval, including migration and repository tests.
 
 ## Phase 2 — Core animal management
 
@@ -50,7 +50,7 @@ The roadmap is ordered by dependencies. Planned work is not complete until imple
 - [ ] Idempotent retries.
 - [ ] Conflict handling.
 - [ ] Attachment upload recovery.
-- [ ] Workspace roles and server authorization.
+- [ ] Implement workspace roles and server authorization from the approved permission matrix.
 - [ ] Audit events and backup.
 
 ## Phase 5 — Content updater and release engineering
