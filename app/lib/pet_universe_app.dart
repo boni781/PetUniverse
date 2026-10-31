@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'core/database/app_database.dart';
@@ -43,7 +45,7 @@ class _PetUniverseAppState extends State<PetUniverseApp> {
   @override
   void dispose() {
     if (_ownsDatabase) {
-      _database.close();
+      unawaited(_database.close());
     }
     super.dispose();
   }
