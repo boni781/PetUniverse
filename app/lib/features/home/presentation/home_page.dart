@@ -97,7 +97,7 @@ class HomePage extends StatelessWidget {
                   const Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: const [
+                    children: [
                       _PlatformChip(label: 'Android'),
                       _PlatformChip(label: 'iOS'),
                       _PlatformChip(label: 'Offline-first'),
