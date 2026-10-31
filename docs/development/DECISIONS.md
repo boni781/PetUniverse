@@ -13,6 +13,7 @@ This file records agreed project direction. Add dated entries when decisions are
 | Data strategy | Offline-first with cloud sync | Agreed |
 | Marketplace | Out of scope | Agreed |
 | Species catalog | Extensible and custom-species capable | Agreed |
+| Core logical data model | Proposed in `docs/architecture/DATA_MODEL.md`; review required | Draft |
 | Animal representation | Individual and first-class group records | Agreed |
 | Updates | GitHub Releases plus separate content ZIP packages | Direction agreed |
 | Core app distribution | Platform-compliant Android/iOS channels | Required |
@@ -25,7 +26,8 @@ This file records agreed project direction. Add dated entries when decisions are
 - Final Flutter architecture and package selection.
 - Local database technology.
 - Backend and cloud database technology.
-- Dynamic attribute schema format.
+- Review and approve the proposed logical data model in `docs/architecture/DATA_MODEL.md`.
+- Dynamic attribute schema format and version compatibility.
 - Conflict-resolution policy by record type.
 - Authentication providers.
 - Attachment storage and retention.
