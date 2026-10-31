@@ -161,7 +161,7 @@ class _SideMenu extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 9),
-          _ModeSelector(mode: mode, onChanged: onModeChanged),
+          _SidebarModePicker(mode: mode, onChanged: onModeChanged),
           const SizedBox(height: 25),
           Text(
             'MENU UTAMA',
@@ -233,6 +233,44 @@ class _SideMenu extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SidebarModePicker extends StatelessWidget {
+  const _SidebarModePicker({required this.mode, required this.onChanged});
+
+  final WorkspaceMode mode;
+  final ValueChanged<WorkspaceMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<WorkspaceMode>(
+          value: mode,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+          items: [
+            for (final item in WorkspaceMode.values)
+              DropdownMenuItem(
+                value: item,
+                child: Text(item.label, overflow: TextOverflow.ellipsis),
+              ),
+          ],
+          onChanged: (value) {
+            if (value != null) onChanged(value);
+          },
+        ),
       ),
     );
   }
