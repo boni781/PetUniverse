@@ -4,9 +4,6 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
-import '../../../core/database/tables/animal_profiles.dart';
-import '../../../core/database/tables/group_details.dart';
-import '../../../core/database/tables/individual_details.dart';
 
 class AnimalRepository {
   AnimalRepository(this._database);
