@@ -10,6 +10,8 @@ import 'tables/group_memberships.dart';
 import 'tables/habitats.dart';
 import 'tables/individual_details.dart';
 import 'tables/species.dart';
+import 'tables/species_attribute_values.dart';
+import 'tables/species_sources.dart';
 import 'tables/species_attribute_definitions.dart';
 import 'tables/sync_outbox.dart';
 import 'tables/workspace_memberships.dart';
@@ -23,7 +25,9 @@ part 'app_database.g.dart';
     Workspaces,
     WorkspaceMemberships,
     Species,
+    SpeciesSources,
     SpeciesAttributeDefinitions,
+    SpeciesAttributeValues,
     AnimalProfiles,
     IndividualDetails,
     GroupDetails,
