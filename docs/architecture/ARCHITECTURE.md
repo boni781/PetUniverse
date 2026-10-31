@@ -48,9 +48,9 @@ Store measurement value, unit, context, timestamp, and source. Unknown values mu
 
 ## 7. Backend and authorization
 
-A cloud backend is required for account identity, workspace collaboration, synchronization, and backup. The backend technology is not yet selected.
+A cloud backend is required for account identity, workspace collaboration, synchronization, and backup. The proposed direction is Supabase PostgreSQL, Auth, and private Storage; see [STORAGE_AND_SYNC.md](STORAGE_AND_SYNC.md). This remains a proposal pending review and a non-production proof of concept.
 
-Workspace membership and role checks must be enforced by server-side authorization. Client-side hiding is not a security boundary.
+The proposed workspace roles and baseline capabilities are documented in [ROLE_PERMISSION_MATRIX.md](../security/ROLE_PERMISSION_MATRIX.md). Workspace membership and role checks must be enforced by server-side authorization. Client-side hiding is not a security boundary. If Supabase is selected, use explicit grants and Row Level Security (RLS) policies for every exposed workspace-owned table and private Storage object.
 
 ## 8. Content updates
 
