@@ -70,7 +70,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/android app/ios app/.metadata app/.gitignore app/pubspec.lock
+          git add app/android app/ios app/.gitignore app/pubspec.lock
 
           if git diff --cached --quiet; then
             echo "No generated files to commit."
