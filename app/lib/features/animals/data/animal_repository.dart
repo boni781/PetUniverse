@@ -25,6 +25,10 @@ class AnimalRepository {
         .watch();
   }
 
+  Stream<int> watchProfileCount(String workspaceId) {
+    return watchProfiles(workspaceId).map((profiles) => profiles.length);
+  }
+
   Future<AnimalProfile?> getProfileById(String id) {
     return (_database.select(_database.animalProfiles)
           ..where((table) => table.id.equals(id)))
