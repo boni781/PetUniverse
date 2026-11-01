@@ -4,7 +4,12 @@ import '../../../core/app_version.dart';
 import '../data/update_service.dart';
 
 class UpdatePage extends StatefulWidget {
-  const UpdatePage({super.key});
+  const UpdatePage({
+    required this.onPrepareForUpdate,
+    super.key,
+  });
+
+  final Future<void> Function() onPrepareForUpdate;
 
   @override
   State<UpdatePage> createState() => _UpdatePageState();
@@ -61,7 +66,10 @@ class _UpdatePageState extends State<UpdatePage> {
     });
 
     try {
-      await _service.downloadAndStart(release);
+      await _service.downloadAndStart(
+        release,
+        beforeExit: widget.onPrepareForUpdate,
+      );
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = error);
