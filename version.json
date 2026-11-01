@@ -1,0 +1,7 @@
+{
+  "name": "PetUniverse",
+  "version": "0.1.0",
+  "build": 1,
+  "channel": "stable",
+  "platform": "windows-x64"
+}
