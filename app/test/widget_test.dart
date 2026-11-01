@@ -6,7 +6,10 @@ import 'package:pet_universe/core/database/app_database.dart';
 import 'package:pet_universe/pet_universe_app.dart';
 
 AppDatabase createTestDatabase() {
-  return AppDatabase.forTesting(DatabaseConnection(NativeDatabase.memory()));
+  return AppDatabase.forTesting(DatabaseConnection(
+    NativeDatabase.memory(),
+    closeStreamsSynchronously: true,
+  ));
 }
 
 void main() {
