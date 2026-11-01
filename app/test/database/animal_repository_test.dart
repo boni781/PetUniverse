@@ -1,15 +1,19 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pet_universe/core/database/app_database.dart';
 import 'package:pet_universe/core/workspace/workspace_mode.dart';
 import 'package:pet_universe/features/animals/data/animal_repository.dart';
+import 'package:pet_universe/features/species/data/species_repository.dart';
 import 'package:pet_universe/features/workspaces/data/workspace_repository.dart';
 
 void main() {
   late AppDatabase database;
   late WorkspaceRepository workspaces;
   late AnimalRepository animals;
+  late SpeciesRepository species;
 
   setUp(() {
     database = AppDatabase.forTesting(
@@ -20,6 +24,7 @@ void main() {
     );
     workspaces = WorkspaceRepository(database);
     animals = AnimalRepository(database);
+    species = SpeciesRepository(database);
   });
 
   tearDown(() async {
@@ -37,7 +42,8 @@ void main() {
     expect(records, hasLength(2));
   });
 
-  test('creates an individual profile, detail row, and outbox atomically', () async {
+  test('creates an individual profile, detail row, and outbox atomically',
+      () async {
     final workspaceId = await workspaces.ensureWorkspace(
       mode: WorkspaceMode.personal,
       name: 'Ruang Tes',
@@ -64,6 +70,179 @@ void main() {
     expect(outbox, hasLength(1));
     expect(outbox.single.entityId, profileId);
     expect(outbox.single.status, 'pending');
+  });
+
+  test('saves species attributes and individual details in one transaction',
+      () async {
+    final workspaceId = await workspaces.ensureWorkspace(
+      mode: WorkspaceMode.personal,
+      name: 'Ruang Atribut',
+    );
+    final speciesId = await species.createCustomSpecies(
+      workspaceId: workspaceId,
+      commonName: 'Kucing domestik',
+      scientificName: 'Felis catus',
+      categoryKey: 'mammal',
+    );
+    final colorDefinitionId = await species.createAttributeDefinition(
+      workspaceId: workspaceId,
+      speciesId: speciesId,
+      label: 'Warna bulu',
+      valueType: 'single_choice',
+      options: ['Hitam', 'Putih', 'Belang'],
+      isRequired: true,
+    );
+    final lengthDefinitionId = await species.createAttributeDefinition(
+      workspaceId: workspaceId,
+      speciesId: speciesId,
+      label: 'Panjang tubuh',
+      valueType: 'measurement',
+      unitCode: 'cm',
+    );
+
+    final profileId = await animals.createIndividual(
+      workspaceId: workspaceId,
+      displayName: 'Milo',
+      speciesId: speciesId,
+      sexCode: 'Jantan',
+      birthDate: DateTime.utc(2023, 4, 12),
+      birthDatePrecision: 'estimated',
+      attributeValues: {
+        colorDefinitionId: 'Belang',
+        lengthDefinitionId: 42.5,
+      },
+    );
+
+    final profile = await animals.getProfileById(profileId);
+    final details = await (database.select(database.individualDetails)
+          ..where((table) => table.animalProfileId.equals(profileId)))
+        .getSingle();
+    final values = await (database.select(database.speciesAttributeValues)
+          ..where((table) => table.animalProfileId.equals(profileId)))
+        .get();
+    final outbox = await (database.select(database.syncOutbox)
+          ..where((table) => table.entityId.equals(profileId)))
+        .getSingle();
+
+    expect(profile?.speciesId, speciesId);
+    expect(details.sexCode, 'Jantan');
+    expect(details.birthDatePrecision, 'estimated');
+    expect(values, hasLength(2));
+
+    final byDefinition = {
+      for (final value in values) value.attributeDefinitionId: value,
+    };
+    expect(
+      (jsonDecode(byDefinition[colorDefinitionId]!.valueJson)
+          as Map<String, dynamic>)['value'],
+      'Belang',
+    );
+    expect(
+      (jsonDecode(byDefinition[lengthDefinitionId]!.valueJson)
+          as Map<String, dynamic>)['value'],
+      42.5,
+    );
+    expect(byDefinition[lengthDefinitionId]!.unitCode, 'cm');
+
+    final payload = jsonDecode(outbox.payloadJson) as Map<String, dynamic>;
+    expect(payload['speciesId'], speciesId);
+    expect(payload['attributes'], hasLength(2));
+    expect(outbox.status, 'pending');
+  });
+
+  test('rejects a missing required species attribute without partial records',
+      () async {
+    final workspaceId = await workspaces.ensureWorkspace(
+      mode: WorkspaceMode.personal,
+      name: 'Ruang Validasi Atribut',
+    );
+    final speciesId = await species.createCustomSpecies(
+      workspaceId: workspaceId,
+      commonName: 'Ikan uji',
+      categoryKey: 'aquatic',
+    );
+    await species.createAttributeDefinition(
+      workspaceId: workspaceId,
+      speciesId: speciesId,
+      label: 'Pola warna',
+      valueType: 'text',
+      isRequired: true,
+    );
+
+    await expectLater(
+      animals.createIndividual(
+        workspaceId: workspaceId,
+        displayName: 'Ikan A',
+        speciesId: speciesId,
+      ),
+      throwsArgumentError,
+    );
+
+    final profiles = await database.select(database.animalProfiles).get();
+    final values = await database.select(database.speciesAttributeValues).get();
+    final outbox = await database.select(database.syncOutbox).get();
+    expect(profiles, isEmpty);
+    expect(values, isEmpty);
+    expect(outbox, isEmpty);
+  });
+
+  test('prevents a profile from using another workspace custom species',
+      () async {
+    final personalId = await workspaces.ensureWorkspace(
+      mode: WorkspaceMode.personal,
+      name: 'Ruang Personal',
+    );
+    final professionalId = await workspaces.ensureWorkspace(
+      mode: WorkspaceMode.professional,
+      name: 'Ruang Professional',
+    );
+    final speciesId = await species.createCustomSpecies(
+      workspaceId: personalId,
+      commonName: 'Spesies privat',
+    );
+
+    await expectLater(
+      animals.createIndividual(
+        workspaceId: professionalId,
+        displayName: 'Profil silang',
+        speciesId: speciesId,
+      ),
+      throwsArgumentError,
+    );
+
+    expect(
+      await database.select(database.animalProfiles).get(),
+      isEmpty,
+    );
+  });
+
+  test('creates a group with a dated estimate rather than a verified count',
+      () async {
+    final workspaceId = await workspaces.ensureWorkspace(
+      mode: WorkspaceMode.professional,
+      name: 'Ruang Kelompok',
+    );
+    final observedAt = DateTime.utc(2026, 10, 31);
+
+    final profileId = await animals.createGroup(
+      workspaceId: workspaceId,
+      displayName: 'Koloni guppy',
+      groupPurpose: 'Pembesaran',
+      memberTrackingMode: 'estimated',
+      reportedCount: 24,
+      countObservedAt: observedAt,
+      countNote: 'Pengamatan saat pemindahan',
+    );
+
+    final group = await (database.select(database.groupDetails)
+          ..where((table) => table.animalProfileId.equals(profileId)))
+        .getSingle();
+
+    expect(group.groupPurpose, 'Pembesaran');
+    expect(group.memberTrackingMode, 'estimated');
+    expect(group.reportedCount, 24);
+    expect(group.countObservedAt, observedAt);
+    expect(group.countNote, 'Pengamatan saat pemindahan');
   });
 
   test('creates a group profile without inventing a member count', () async {
