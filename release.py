@@ -525,6 +525,18 @@ def main() -> int:
 
     preflight(ROOT, config)
     ensure_release_tag_unused(config, tag)
+    try:
+        visibility = release_visibility(config)
+    except Exception as exc:
+        print(f"Release repository tidak dapat diperiksa: {exc}")
+        return 1
+    if visibility != "PUBLIC":
+        print(
+            "Release dihentikan sebelum build: repository release harus PUBLIC "
+            "agar updater tanpa token dapat mengunduh paket. Atur "
+            "release_repository di release_config.json."
+        )
+        return 1
     git_status(ROOT)
 
     managed = [
@@ -552,18 +564,6 @@ def main() -> int:
         print("========================================")
         for label, path in assets.items():
             print(f"{label:10}: {path} ({path.stat().st_size:,} bytes)")
-
-        visibility = release_visibility(config)
-        if visibility != "PUBLIC":
-            raise RuntimeError(
-                f"Repository release berstatus {visibility or 'UNKNOWN'}. "
-                "Updater tidak menyimpan token GitHub di dalam aplikasi; "
-                "release asset harus dapat diunduh secara publik. Gunakan "
-                "repository khusus release yang public atau ubah visibility "
-                "repository release, lalu atur release_repository di "
-                "release_config.json. Build lokal sudah selesai dan asset "
-                f"tersedia di {RELEASE_OUTPUT}; metadata versi dipertahankan."
-            )
 
         if ask("Commit, push, dan publish release? Ketik YA", "TIDAK").upper() != "YA":
             print(f"Build lokal selesai. Aset tersedia di {RELEASE_OUTPUT}")
