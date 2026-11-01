@@ -309,7 +309,7 @@ class AnimalRepository {
 
       final serializedValue = _serializeAttributeValue(
         definition: definition,
-        value: rawValue!,
+        value: rawValue,
       );
       result.add(
         _NormalizedAttributeValue(
@@ -411,7 +411,7 @@ class AnimalRepository {
               attributeDefinitionId: value.definition.id,
               valueJson: value.serializedValue,
               unitCode: Value(value.definition.unitCode),
-              observedAt: Value(null),
+              observedAt: const Value(null),
               valueSource: const Value('user'),
               createdAt: now,
               updatedAt: now,
