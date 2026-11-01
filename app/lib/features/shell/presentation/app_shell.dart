@@ -7,6 +7,7 @@ import '../../animals/presentation/animal_list_page.dart';
 import '../../home/presentation/home_page.dart';
 import '../../habitats/presentation/habitat_page.dart';
 import '../../care/presentation/care_management_page.dart';
+import '../../updates/presentation/update_page.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -74,6 +75,9 @@ class _AppShellState extends State<AppShell> {
         database: widget.database,
         workspaceId: widget.workspaceIds[_mode]!,
       );
+    }
+    if (_index == 7) {
+      return const UpdatePage();
     }
     if (_index == 0) {
       final workspaceId = widget.workspaceIds[_mode]!;
@@ -711,6 +715,12 @@ class _MorePage extends StatelessWidget {
             title: 'Katalog spesies',
             subtitle: 'Referensi spesies dan kebutuhan perawatan',
             onTap: () => onNavigate(5),
+          ),
+          _MoreTile(
+            icon: Icons.system_update_alt_outlined,
+            title: 'Pembaruan aplikasi',
+            subtitle: 'Periksa versi terbaru dari GitHub Release',
+            onTap: () => onNavigate(7),
           ),
         ],
       ),
