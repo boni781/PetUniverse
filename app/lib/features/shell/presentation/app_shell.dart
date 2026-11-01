@@ -6,6 +6,7 @@ import '../../animals/data/animal_repository.dart';
 import '../../animals/presentation/animal_list_page.dart';
 import '../../home/presentation/home_page.dart';
 import '../../habitats/presentation/habitat_page.dart';
+import '../../care/presentation/care_management_page.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -62,6 +63,13 @@ class _AppShellState extends State<AppShell> {
     }
     if (_index == 2) {
       return HabitatPage(
+        key: ValueKey(_mode),
+        database: widget.database,
+        workspaceId: widget.workspaceIds[_mode]!,
+      );
+    }
+    if (_index == 3) {
+      return CareManagementPage(
         key: ValueKey(_mode),
         database: widget.database,
         workspaceId: widget.workspaceIds[_mode]!,
