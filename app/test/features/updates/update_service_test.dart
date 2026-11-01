@@ -7,6 +7,7 @@ void main() {
       expect(UpdateService.compareVersions('0.10.0', '0.9.9'), 1);
       expect(UpdateService.compareVersions('1.0.0', '0.99.99'), 1);
       expect(UpdateService.compareVersions('0.4.2', '0.4.3'), -1);
+      expect(UpdateService.compareVersions('0.9.9', '1.0.0'), -1);
     });
 
     test('accepts a leading v in release tags', () {
