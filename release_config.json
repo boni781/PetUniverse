@@ -2,7 +2,7 @@
   "source_repository": "boni781/PetUniverse",
   "release_repository": "boni781/PetUniverse",
   "git_remote": "origin",
-  "git_branch": "feature/app-shell-dashboard",
+  "git_branch": "main",
   "app_directory": "app",
   "windows_arch": "x64",
   "executable_name": "pet_universe.exe"
