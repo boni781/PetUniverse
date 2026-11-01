@@ -229,6 +229,42 @@ def restore_files(snapshots: dict[Path, bytes | None]) -> None:
             path.write_bytes(content)
 
 
+def validate_android_signing(app_dir: Path) -> None:
+    """Require a local Android upload keystore before creating release builds."""
+    properties_file = app_dir / "android" / "key.properties"
+    if not properties_file.is_file():
+        raise RuntimeError(
+            "Android release signing belum disiapkan. Buat keystore lokal "
+            "app/android/upload-keystore.jks dan file app/android/key.properties. "
+            "Lihat ANDROID_RELEASE_GUIDE.md. Jangan commit kedua file tersebut."
+        )
+
+    values: dict[str, str] = {}
+    for raw_line in properties_file.read_text(encoding="utf-8-sig").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        values[key.strip()] = value.strip()
+
+    required = ("storePassword", "keyPassword", "keyAlias", "storeFile")
+    missing = [key for key in required if not values.get(key)]
+    if missing:
+        raise RuntimeError(
+            "app/android/key.properties belum lengkap. Properti yang kurang: "
+            + ", ".join(missing)
+        )
+
+    keystore = Path(values["storeFile"])
+    if not keystore.is_absolute():
+        keystore = properties_file.parent / keystore
+    if not keystore.is_file():
+        raise FileNotFoundError(
+            "Keystore Android tidak ditemukan sesuai storeFile di key.properties."
+        )
+    print("[OK] Android release signing tersedia (file rahasia tidak ditampilkan).")
+
+
 def preflight(project: Path, config: dict[str, Any]) -> None:
     if os.name != "nt":
         raise RuntimeError("Release Windows harus dijalankan dari Windows.")
@@ -243,6 +279,7 @@ def preflight(project: Path, config: dict[str, Any]) -> None:
             "flutter create --platforms=windows . dari folder app. Perintah ini "
             "menambahkan scaffold Windows; periksa perubahan lokal sebelum commit."
         )
+    validate_android_signing(config["_app_dir"])
     run_command(["git", "rev-parse", "--is-inside-work-tree"], project, capture=True)
     auth = subprocess.run(
         ["gh", "auth", "status"], cwd=project, text=True, capture_output=True,
@@ -290,43 +327,43 @@ def build_and_test(
     version: str,
     build_number: int,
     config: dict[str, Any],
-) -> Path:
-    print("\nSTEP 1/5 - Instal dependensi")
+) -> dict[str, Path]:
+    owner, repository = split_repository(str(config["release_repository"]))
+    version_args = ["--build-name", version, "--build-number", str(build_number)]
+    update_args = [
+        f"--dart-define=PETUNIVERSE_UPDATE_OWNER={owner}",
+        f"--dart-define=PETUNIVERSE_UPDATE_REPOSITORY={repository}",
+    ]
+
+    print("\nSTEP 1/7 - Instal dependensi")
     run_command(["flutter", "pub", "get"], app_dir)
 
-    print("\nSTEP 2/5 - Generate kode Drift")
+    print("\nSTEP 2/7 - Generate kode Drift")
     run_command(["dart", "run", "build_runner", "build"], app_dir)
 
-    print("\nSTEP 3/5 - Analyzer")
+    print("\nSTEP 3/7 - Analyzer")
     run_command(["flutter", "analyze", "--fatal-infos"], app_dir)
 
-    print("\nSTEP 4/5 - Seluruh pengujian")
+    print("\nSTEP 4/7 - Seluruh pengujian")
     run_command(["flutter", "test"], app_dir)
 
-    print("\nSTEP 5/5 - Build Windows Release")
-    owner, repository = split_repository(str(config["release_repository"]))
+    print("\nSTEP 5/7 - Build Windows Release")
     run_command(
-        [
-            "flutter", "build", "windows", "--release",
-            "--build-name", version,
-            "--build-number", str(build_number),
-            f"--dart-define=PETUNIVERSE_UPDATE_OWNER={owner}",
-            f"--dart-define=PETUNIVERSE_UPDATE_REPOSITORY={repository}",
-        ],
+        ["flutter", "build", "windows", "--release", *version_args, *update_args],
         app_dir,
     )
 
-    build_dir = (
+    windows_dir = (
         app_dir / "build" / "windows" / str(config["windows_arch"])
         / "runner" / "Release"
     )
-    if not build_dir.is_dir():
-        raise FileNotFoundError(f"Folder hasil build tidak ditemukan: {build_dir}")
+    if not windows_dir.is_dir():
+        raise FileNotFoundError(f"Folder hasil build Windows tidak ditemukan: {windows_dir}")
 
     executable = str(config["executable_name"])
-    if not (build_dir / executable).is_file():
+    if not (windows_dir / executable).is_file():
         candidates = [
-            item.name for item in build_dir.glob("*.exe")
+            item.name for item in windows_dir.glob("*.exe")
             if item.name.lower() != "flutter_tester.exe"
         ]
         if len(candidates) != 1:
@@ -334,8 +371,42 @@ def build_and_test(
                 f"{executable} tidak ditemukan; kandidat executable: {candidates}"
             )
         config["executable_name"] = candidates[0]
-    return build_dir
 
+    print("\nSTEP 6/7 - Build Android APK")
+    run_command(
+        ["flutter", "build", "apk", "--release", *version_args],
+        app_dir,
+    )
+    apk_candidates = [
+        app_dir / "build" / "app" / "outputs" / "flutter-apk" / "app-release.apk",
+        app_dir / "build" / "app" / "outputs" / "flutter-apk" / "app.apk",
+    ]
+    apk_path = next((path for path in apk_candidates if path.is_file()), None)
+    if apk_path is None:
+        raise FileNotFoundError(
+            "APK release tidak ditemukan di app/build/app/outputs/flutter-apk/."
+        )
+
+    print("\nSTEP 7/7 - Build Android App Bundle")
+    run_command(
+        ["flutter", "build", "appbundle", "--release", *version_args],
+        app_dir,
+    )
+    aab_candidates = [
+        app_dir / "build" / "app" / "outputs" / "bundle" / "release" / "app.aab",
+        app_dir / "build" / "app" / "outputs" / "bundle" / "release" / "app-release.aab",
+    ]
+    aab_path = next((path for path in aab_candidates if path.is_file()), None)
+    if aab_path is None:
+        raise FileNotFoundError(
+            "AAB release tidak ditemukan di app/build/app/outputs/bundle/release/."
+        )
+
+    return {
+        "windows": windows_dir,
+        "android_apk": apk_path,
+        "android_aab": aab_path,
+    }
 
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -346,12 +417,13 @@ def sha256_file(path: Path) -> str:
 
 
 def create_assets(
-    build_dir: Path,
+    build_outputs: dict[str, Path],
     version: str,
     build_number: int,
     title: str,
     config: dict[str, Any],
 ) -> dict[str, Path]:
+    build_dir = build_outputs["windows"]
     for required in (INSTALLER_TEMPLATE, INSTALLER_LAUNCHER_TEMPLATE, UPDATE_HELPER):
         if not required.is_file():
             raise FileNotFoundError(f"File pendukung tidak ditemukan: {required}")
@@ -442,14 +514,59 @@ def create_assets(
         encoding="utf-8",
     )
 
-    return {
-        "zip": zip_path,
-        "installer": installer_path,
-        "launcher": launcher_path,
-        "checksums": checksum_path,
-        "manifest": manifest_path,
-    }
+    android_apk_path = RELEASE_OUTPUT / f"PetUniverse-Android-{tag}.apk"
+    android_aab_path = RELEASE_OUTPUT / f"PetUniverse-Android-{tag}.aab"
+    shutil.copy2(build_outputs["android_apk"], android_apk_path)
+    shutil.copy2(build_outputs["android_aab"], android_aab_path)
 
+    android_checksums_path = RELEASE_OUTPUT / f"PetUniverse-Android-SHA256SUMS-{tag}.txt"
+    android_checksums = (
+        f"{sha256_file(android_apk_path)}  {android_apk_path.name}\n"
+        f"{sha256_file(android_aab_path)}  {android_aab_path.name}\n"
+    )
+    android_checksums_path.write_text(android_checksums, encoding="utf-8")
+
+    android_manifest_path = RELEASE_OUTPUT / f"PetUniverse-Android-version-{tag}.json"
+    android_manifest = {
+        "name": "PetUniverse",
+        "version": version,
+        "build": build_number,
+        "tag": tag,
+        "platform": "android",
+        "application_id": "com.boni781.pet_universe",
+        "artifacts": [
+            {
+                "type": "apk",
+                "asset": android_apk_path.name,
+                "sha256": sha256_file(android_apk_path),
+                "purpose": "Instalasi langsung pada perangkat Android",
+            },
+            {
+                "type": "aab",
+                "asset": android_aab_path.name,
+                "sha256": sha256_file(android_aab_path),
+                "purpose": "Upload ke Google Play Console",
+            },
+        ],
+        "release_repository": config["release_repository"],
+        "title": title,
+    }
+    android_manifest_path.write_text(
+        json.dumps(android_manifest, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    return {
+        "windows_zip": zip_path,
+        "windows_installer": installer_path,
+        "windows_launcher": launcher_path,
+        "windows_checksums": checksum_path,
+        "windows_manifest": manifest_path,
+        "android_apk": android_apk_path,
+        "android_aab": android_aab_path,
+        "android_checksums": android_checksums_path,
+        "android_manifest": android_manifest_path,
+    }
 
 def commit_and_push(
     changed_files: list[Path],
@@ -479,11 +596,15 @@ def publish_release(
 ) -> None:
     command = [
         "gh", "release", "create", f"v{version}",
-        str(assets["zip"]),
-        str(assets["installer"]),
-        str(assets["launcher"]),
-        str(assets["checksums"]),
-        str(assets["manifest"]),
+        str(assets["windows_zip"]),
+        str(assets["windows_installer"]),
+        str(assets["windows_launcher"]),
+        str(assets["windows_checksums"]),
+        str(assets["windows_manifest"]),
+        str(assets["android_apk"]),
+        str(assets["android_aab"]),
+        str(assets["android_checksums"]),
+        str(assets["android_manifest"]),
         "--repo", str(config["release_repository"]),
         "--title", title,
         "--notes", notes,
@@ -544,7 +665,7 @@ def main() -> int:
     print(f"Tag        : {tag}")
     print(f"Judul      : {title}")
     print(f"Release    : {config['release_repository']}")
-    print("Platform   : Windows x64")
+    print("Platform   : Windows x64 + Android (APK dan AAB)")
     print("Installer  : PowerShell, tanpa Inno Setup")
     if ask("Mulai build? Ketik YA", "TIDAK").upper() != "YA":
         print("Dibatalkan. Metadata belum diubah.")
@@ -580,10 +701,10 @@ def main() -> int:
         print("\nSinkronisasi metadata versi...")
         changed_files = sync_metadata(app_dir, version, build_number, title, notes)
 
-        build_dir = build_and_test(app_dir, version, build_number, config)
+        build_outputs = build_and_test(app_dir, version, build_number, config)
 
         print("\nMembuat paket runtime ZIP, checksum, manifest, dan installer...")
-        assets = create_assets(build_dir, version, build_number, title, config)
+        assets = create_assets(build_outputs, version, build_number, title, config)
         build_completed = True
 
         print("\n========================================")
