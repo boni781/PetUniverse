@@ -12,7 +12,10 @@ void main() {
   late AnimalRepository animals;
 
   setUp(() {
-    database = AppDatabase.forTesting(DatabaseConnection(NativeDatabase.memory()));
+    database = AppDatabase.forTesting(DatabaseConnection(
+    NativeDatabase.memory(),
+    closeStreamsSynchronously: true,
+  ));
     workspaces = WorkspaceRepository(database);
     animals = AnimalRepository(database);
   });
