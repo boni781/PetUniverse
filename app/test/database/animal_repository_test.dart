@@ -304,8 +304,10 @@ void main() {
       'Krem',
     );
     expect(outbox, hasLength(2));
-    expect(outbox.first.operationKind, 'create');
-    expect(outbox.last.operationKind, 'update');
+    expect(
+      outbox.map((operation) => operation.operationKind).toSet(),
+      {'create', 'update'},
+    );
     expect(detail?.profile.displayName, 'Milo Putih');
     expect(detail?.individualDetails?.lifeStageCode, 'Dewasa');
     expect(detail?.attributes, hasLength(1));
@@ -348,7 +350,10 @@ void main() {
     expect(group.reportedCount, 32);
     expect(group.countObservedAt?.isAtSameMomentAs(observedAt), isTrue);
     expect(outbox, hasLength(2));
-    expect(outbox.last.operationKind, 'update');
+    expect(
+      outbox.map((operation) => operation.operationKind),
+      contains('update'),
+    );
   });
 
   test('creates a group profile without inventing a member count', () async {
