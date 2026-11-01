@@ -338,7 +338,9 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
     if (picked == null || !mounted) return;
     setState(() {
       _birthDate = _dateOnly(picked);
-      _birthDatePrecision ??= 'exact';
+      if (_birthDatePrecision == null || _birthDatePrecision == 'unknown') {
+        _birthDatePrecision = 'exact';
+      }
     });
   }
 
