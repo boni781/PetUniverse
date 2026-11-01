@@ -48,10 +48,11 @@ class AnimalRepository {
         .getSingleOrNull();
     if (profile == null) return null;
 
-    final species = profile.speciesId == null
+    final speciesId = profile.speciesId;
+    final species = speciesId == null
         ? null
         : await (_database.select(_database.species)
-              ..where((table) => table.id.equals(profile.speciesId!)))
+              ..where((table) => table.id.equals(speciesId)))
             .getSingleOrNull();
 
     final individualDetails = profile.recordKind == 'individual'
