@@ -269,7 +269,7 @@ class HabitatRepository {
         throw StateError('Habitat tidak aktif dan tidak dapat menerima hewan.');
       }
 
-      final duplicate = await (_database.select(
+      final duplicates = await (_database.select(
                 _database.animalHabitatAssignments,
               )
               ..where(
@@ -283,9 +283,9 @@ class HabitatRepository {
               ..orderBy([
                 (table) => OrderingTerm.desc(table.validFrom),
               ]))
-          .getSingleOrNull();
+          .get();
 
-      if (duplicate != null) {
+      if (duplicates.isNotEmpty) {
         return;
       }
 
@@ -387,9 +387,9 @@ class HabitatRepository {
             ..orderBy([
               (table) => OrderingTerm.desc(table.validFrom),
             ]))
-        .getSingleOrNull();
+        .get();
 
-    return current?.id ?? assignmentId;
+    return current.isEmpty ? assignmentId : current.first.id;
   }
 
   Future<void> closeAssignment({
@@ -598,8 +598,8 @@ class HabitatRepository {
     required String operationKind,
     required Map<String, Object?> payload,
     required DateTime createdAt,
-  }) {
-    return _database.into(_database.syncOutbox).insert(
+  }) async {
+    await _database.into(_database.syncOutbox).insert(
           SyncOutboxCompanion.insert(
             operationId: operationId,
             workspaceId: workspaceId,
