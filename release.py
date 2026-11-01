@@ -61,14 +61,41 @@ def run_command(
     check: bool = True,
 ) -> subprocess.CompletedProcess[str]:
     print("\n>", subprocess.list2cmdline([str(item) for item in command]))
-    result = subprocess.run(
-        [str(item) for item in command],
-        cwd=str(cwd),
-        text=True,
-        capture_output=capture,
-        errors="replace",
-        check=False,
+    normalized_command = [str(item) for item in command]
+    executable = shutil.which(normalized_command[0])
+
+    # Flutter on Windows is commonly exposed as flutter.bat. Resolve batch
+    # launchers explicitly through the command shell; CreateProcess does not
+    # reliably resolve a bare command name using PATHEXT the same way as
+    # PowerShell, even though shutil.which() can find the .bat file.
+    is_batch_launcher = (
+        os.name == "nt"
+        and executable is not None
+        and Path(executable).suffix.lower() in {".bat", ".cmd"}
     )
+
+    if is_batch_launcher:
+        batch_command = subprocess.list2cmdline(
+            [executable, *normalized_command[1:]]
+        )
+        result = subprocess.run(
+            batch_command,
+            cwd=str(cwd),
+            text=True,
+            capture_output=capture,
+            errors="replace",
+            check=False,
+            shell=True,
+        )
+    else:
+        result = subprocess.run(
+            normalized_command,
+            cwd=str(cwd),
+            text=True,
+            capture_output=capture,
+            errors="replace",
+            check=False,
+        )
     if capture and result.stdout:
         print(result.stdout.rstrip())
     if check and result.returncode != 0:
