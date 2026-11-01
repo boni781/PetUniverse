@@ -86,7 +86,7 @@ class UpdateService {
       throw const UpdateException('URL halaman release tidak valid.');
     }
 
-    final currentVersion = AppVersion.version;
+    const currentVersion = AppVersion.version;
     final updateAvailable =
         compareVersions(latestVersion, currentVersion) > 0;
 
