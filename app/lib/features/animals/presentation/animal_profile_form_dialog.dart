@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../species/data/species_repository.dart';
+import '../data/animal_repository.dart';
 
 class AnimalProfileDraft {
   const AnimalProfileDraft({
@@ -45,11 +46,13 @@ class AnimalProfileFormDialog extends StatefulWidget {
   const AnimalProfileFormDialog({
     required this.database,
     required this.workspaceId,
+    this.initialDetail,
     super.key,
   });
 
   final AppDatabase database;
   final String workspaceId;
+  final AnimalProfileDetail? initialDetail;
 
   @override
   State<AnimalProfileFormDialog> createState() =>
@@ -74,6 +77,7 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
   final Map<String, Object?> _attributeValues = {};
   final Map<String, String> _numericInputs = {};
   final Set<String> _touchedAttributeIds = {};
+  bool _initialAttributeValuesApplied = false;
 
   String? _selectedSpeciesId;
   String _memberTrackingMode = 'not_tracked';
@@ -91,7 +95,43 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
   void initState() {
     super.initState();
     _speciesRepository = SpeciesRepository(widget.database);
+    _populateProfileFields();
     _loadSpecies();
+  }
+
+  void _populateProfileFields() {
+    final detail = widget.initialDetail;
+    if (detail == null) return;
+
+    final profile = detail.profile;
+    _nameController.text = profile.displayName;
+    _notesController.text = profile.notes ?? '';
+    _isGroup = profile.recordKind == 'group';
+    _selectedSpeciesId = profile.speciesId;
+
+    if (_isGroup) {
+      final group = detail.groupDetails;
+      _groupPurposeController.text = group?.groupPurpose ?? '';
+      _memberTrackingMode = group?.memberTrackingMode ?? 'not_tracked';
+      if (group?.reportedCount != null) {
+        _countController.text = group!.reportedCount.toString();
+      }
+      _countObservedAt = _localDate(group?.countObservedAt);
+      _countNoteController.text = group?.countNote ?? '';
+    } else {
+      final individual = detail.individualDetails;
+      _sexController.text = individual?.sexCode ?? '';
+      _lifeStageController.text = individual?.lifeStageCode ?? '';
+      _birthDate = _localDate(individual?.birthDate);
+      _birthDatePrecision = individual?.birthDatePrecision ?? 'unknown';
+      _acquiredAt = _localDate(individual?.acquiredAt);
+    }
+  }
+
+  DateTime? _localDate(DateTime? value) {
+    if (value == null) return null;
+    final local = value.toLocal();
+    return DateTime(local.year, local.month, local.day);
   }
 
   @override
@@ -161,15 +201,39 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
           .first;
       if (!mounted) return;
       final allowedKind = _isGroup ? 'group' : 'individual';
+      final applicableDefinitions = definitions
+          .where(
+            (definition) =>
+                definition.appliesTo == 'both' ||
+                definition.appliesTo == allowedKind,
+          )
+          .toList(growable: false);
       setState(() {
-        _definitions = definitions
-            .where(
-              (definition) =>
-                  definition.appliesTo == 'both' ||
-                  definition.appliesTo == allowedKind,
-            )
-            .toList(growable: false);
+        _definitions = applicableDefinitions;
         _attributesLoading = false;
+
+        final initialDetail = widget.initialDetail;
+        if (!_initialAttributeValuesApplied && initialDetail != null) {
+          for (final attribute in initialDetail.attributes) {
+            final definition = applicableDefinitions
+                .where((item) => item.id == attribute.definition.id)
+                .firstOrNull;
+            if (definition == null || attribute.value == null) continue;
+
+            final id = definition.id;
+            if (definition.valueType == 'integer' ||
+                definition.valueType == 'decimal' ||
+                definition.valueType == 'measurement') {
+              _numericInputs[id] = attribute.value.toString();
+            } else {
+              _attributeValues[id] = attribute.value;
+            }
+            if (definition.valueType == 'boolean') {
+              _touchedAttributeIds.add(id);
+            }
+          }
+          _initialAttributeValuesApplied = true;
+        }
       });
     } catch (error) {
       if (!mounted) return;
@@ -405,7 +469,7 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
 
     return AlertDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      title: const Text('Tambah profil hewan'),
+      title: Text(widget.initialDetail == null ? 'Tambah profil hewan' : 'Edit profil hewan'),
       content: SizedBox(
         width: width,
         child: Form(
@@ -496,7 +560,7 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
         FilledButton.icon(
           onPressed: _submit,
           icon: const Icon(Icons.save_outlined),
-          label: const Text('Simpan lokal'),
+          label: Text(widget.initialDetail == null ? 'Simpan lokal' : 'Simpan perubahan'),
         ),
       ],
     );
