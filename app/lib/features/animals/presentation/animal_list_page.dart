@@ -4,6 +4,7 @@ import '../../../core/database/app_database.dart';
 import '../../species/data/species_repository.dart';
 import '../data/animal_repository.dart';
 import 'animal_profile_form_dialog.dart';
+import 'animal_profile_detail_page.dart';
 
 class AnimalListPage extends StatefulWidget {
   const AnimalListPage({
@@ -204,6 +205,18 @@ class _AnimalListPageState extends State<AnimalListPage> {
                               speciesName: profile.speciesId == null
                                   ? null
                                   : speciesById[profile.speciesId],
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (context) =>
+                                        AnimalProfileDetailPage(
+                                      database: widget.database,
+                                      workspaceId: widget.workspaceId,
+                                      profileId: profile.id,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(height: 10),
                           ],
@@ -253,10 +266,12 @@ class _AnimalCard extends StatelessWidget {
   const _AnimalCard({
     required this.profile,
     required this.speciesName,
+    required this.onTap,
   });
 
   final AnimalProfile profile;
   final String? speciesName;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -268,6 +283,7 @@ class _AnimalCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       child: ListTile(
+        onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: colors.primaryContainer,
