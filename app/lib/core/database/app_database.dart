@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import 'tables/animal_habitat_assignments.dart';
 import 'tables/animal_profiles.dart';
+import 'tables/care_records.dart';
+import 'tables/care_schedules.dart';
 import 'tables/app_users.dart';
 import 'tables/group_details.dart';
 import 'tables/group_memberships.dart';
@@ -29,6 +31,8 @@ part 'app_database.g.dart';
     SpeciesAttributeDefinitions,
     SpeciesAttributeValues,
     AnimalProfiles,
+    CareSchedules,
+    CareRecords,
     IndividualDetails,
     GroupDetails,
     GroupMemberships,
@@ -62,7 +66,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -70,10 +74,16 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createAll();
         },
         onUpgrade: (migrator, from, to) async {
-          throw StateError(
-            'No database migration is registered from schema $from to $to. '
-            'PetUniverse will not reset or delete existing local data.',
-          );
+          if (from < 2 && to >= 2) {
+            await migrator.createTable(careSchedules);
+            await migrator.createTable(careRecords);
+          }
+          if (to > 2) {
+            throw StateError(
+              'No database migration is registered from schema $from to $to. '
+              'PetUniverse will not reset or delete existing local data.',
+            );
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
