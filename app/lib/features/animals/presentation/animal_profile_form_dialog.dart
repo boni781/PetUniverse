@@ -215,9 +215,13 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
         final initialDetail = widget.initialDetail;
         if (!_initialAttributeValuesApplied && initialDetail != null) {
           for (final attribute in initialDetail.attributes) {
-            final definition = applicableDefinitions
-                .where((item) => item.id == attribute.definition.id)
-                .firstOrNull;
+            SpeciesAttributeDefinition? definition;
+            for (final item in applicableDefinitions) {
+              if (item.id == attribute.definition.id) {
+                definition = item;
+                break;
+              }
+            }
             if (definition == null || attribute.value == null) continue;
 
             final id = definition.id;
@@ -496,15 +500,18 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
                   ],
                   selected: {_isGroup},
                   showSelectedIcon: false,
-                  onSelectionChanged: (selection) async {
-                    setState(() {
-                      _isGroup = selection.first;
-                      _definitions = [];
-                      _attributeValues.clear();
-                      _numericInputs.clear();
-                    });
-                    await _loadAttributeDefinitions();
-                  },
+                  onSelectionChanged: widget.initialDetail == null
+                      ? (selection) async {
+                          setState(() {
+                            _isGroup = selection.first;
+                            _definitions = [];
+                            _attributeValues.clear();
+                            _numericInputs.clear();
+                            _touchedAttributeIds.clear();
+                          });
+                          await _loadAttributeDefinitions();
+                        }
+                      : null,
                 ),
                 const SizedBox(height: 18),
                 TextFormField(
