@@ -245,6 +245,112 @@ void main() {
     expect(group.countNote, 'Pengamatan saat pemindahan');
   });
 
+  test('updates an individual profile without creating a new profile', () async {
+    final workspaceId = await workspaces.ensureWorkspace(
+      mode: WorkspaceMode.personal,
+      name: 'Ruang Edit Individu',
+    );
+    final speciesId = await species.createCustomSpecies(
+      workspaceId: workspaceId,
+      commonName: 'Kucing domestik',
+    );
+    final colorDefinitionId = await species.createAttributeDefinition(
+      workspaceId: workspaceId,
+      speciesId: speciesId,
+      label: 'Warna bulu',
+      valueType: 'text',
+    );
+
+    final profileId = await animals.createIndividual(
+      workspaceId: workspaceId,
+      displayName: 'Milo',
+      speciesId: speciesId,
+      sexCode: 'Jantan',
+      attributeValues: {colorDefinitionId: 'Putih'},
+    );
+
+    await animals.updateIndividual(
+      workspaceId: workspaceId,
+      profileId: profileId,
+      displayName: 'Milo Putih',
+      speciesId: speciesId,
+      sexCode: 'Jantan',
+      lifeStageCode: 'Dewasa',
+      attributeValues: {colorDefinitionId: 'Krem'},
+    );
+
+    final profiles = await database.select(database.animalProfiles).get();
+    final allValues = await (database.select(database.speciesAttributeValues)
+          ..where((table) => table.animalProfileId.equals(profileId)))
+        .get();
+    final activeValues = allValues.where((value) => value.deletedAt == null);
+    final outbox = await (database.select(database.syncOutbox)
+          ..where((table) => table.entityId.equals(profileId))
+          ..orderBy([(table) => OrderingTerm.asc(table.createdAt)]))
+        .get();
+    final detail = await animals.getProfileDetail(
+      workspaceId: workspaceId,
+      profileId: profileId,
+    );
+
+    expect(profiles, hasLength(1));
+    expect(profiles.single.id, profileId);
+    expect(profiles.single.displayName, 'Milo Putih');
+    expect(allValues, hasLength(2));
+    expect(activeValues, hasLength(1));
+    expect(
+      (jsonDecode(activeValues.single.valueJson)
+          as Map<String, dynamic>)['value'],
+      'Krem',
+    );
+    expect(outbox, hasLength(2));
+    expect(outbox.first.operationKind, 'create');
+    expect(outbox.last.operationKind, 'update');
+    expect(detail?.profile.displayName, 'Milo Putih');
+    expect(detail?.individualDetails?.lifeStageCode, 'Dewasa');
+    expect(detail?.attributes, hasLength(1));
+    expect(detail?.attributes.single.value, 'Krem');
+  });
+
+  test('updates group count and preserves estimated count meaning', () async {
+    final workspaceId = await workspaces.ensureWorkspace(
+      mode: WorkspaceMode.professional,
+      name: 'Ruang Edit Kelompok',
+    );
+    final profileId = await animals.createGroup(
+      workspaceId: workspaceId,
+      displayName: 'Koloni awal',
+    );
+
+    final observedAt = DateTime(2026, 11, 1);
+    await animals.updateGroup(
+      workspaceId: workspaceId,
+      profileId: profileId,
+      displayName: 'Koloni guppy',
+      groupPurpose: 'Pembesaran',
+      memberTrackingMode: 'estimated',
+      reportedCount: 32,
+      countObservedAt: observedAt,
+      countNote: 'Hasil pengamatan terbaru',
+    );
+
+    final profile = await animals.getProfileById(profileId);
+    final group = await (database.select(database.groupDetails)
+          ..where((table) => table.animalProfileId.equals(profileId)))
+        .getSingle();
+    final outbox = await (database.select(database.syncOutbox)
+          ..where((table) => table.entityId.equals(profileId))
+          ..orderBy([(table) => OrderingTerm.asc(table.createdAt)]))
+        .get();
+
+    expect(profile?.displayName, 'Koloni guppy');
+    expect(group.memberTrackingMode, 'estimated');
+    expect(group.reportedCount, 32);
+    expect(group.countObservedAt?.isAtSameMomentAs(observedAt), isTrue);
+    expect(outbox, hasLength(2));
+    expect(outbox.last.operationKind, 'update');
+  });
+
   test('creates a group profile without inventing a member count', () async {
     final workspaceId = await workspaces.ensureWorkspace(
       mode: WorkspaceMode.professional,
