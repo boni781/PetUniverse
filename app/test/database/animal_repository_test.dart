@@ -241,7 +241,7 @@ void main() {
     expect(group.groupPurpose, 'Pembesaran');
     expect(group.memberTrackingMode, 'estimated');
     expect(group.reportedCount, 24);
-    expect(group.countObservedAt, observedAt);
+    expect(group.countObservedAt?.isAtSameMomentAs(observedAt), isTrue);
     expect(group.countNote, 'Pengamatan saat pemindahan');
   });
 
