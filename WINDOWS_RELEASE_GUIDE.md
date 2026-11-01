@@ -113,7 +113,7 @@ It then creates these assets in `release-output/`:
 | Asset | Purpose |
 |---|---|
 | `PetUniverse-Windows-x64-vX.Y.Z.zip` | Built application files used by installer and updater |
-| `PetUniverse-Setup-vX.Y.Z.ps1` | User-level Windows installer |
+| `PetUniverse-Setup-vX.Y.Z.ps1` | User-level Windows installer |\n| `PetUniverse-Setup-vX.Y.Z.cmd` | Double-click launcher for the PowerShell installer |
 | `SHA256SUMS.txt` | ZIP integrity check |
 | `PetUniverse-version-vX.Y.Z.json` | Machine-readable release manifest |
 
@@ -133,7 +133,7 @@ PowerShell:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\PetUniverse-Setup-vX.Y.Z.ps1
 ```
 
-The installer downloads the matching runtime ZIP, verifies SHA-256, and installs
+The `.cmd` launcher and `.ps1` file must be placed in the same folder. Double-click the `.cmd` file or run the PowerShell command below. The installer downloads the matching runtime ZIP, verifies SHA-256, and installs
 to:
 
 `%LOCALAPPDATA%\Programs\PetUniverse`
