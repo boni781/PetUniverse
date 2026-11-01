@@ -24,6 +24,7 @@ class PetUniverseApp extends StatefulWidget {
 class _PetUniverseAppState extends State<PetUniverseApp> {
   late final AppDatabase _database;
   late final bool _ownsDatabase;
+  bool _databaseClosed = false;
   late Future<Map<WorkspaceMode, String>> _workspaceIds;
 
   @override
@@ -42,9 +43,15 @@ class _PetUniverseAppState extends State<PetUniverseApp> {
     setState(() => _workspaceIds = _loadWorkspaces());
   }
 
+  Future<void> _prepareForUpdate() async {
+    if (!_ownsDatabase || _databaseClosed) return;
+    await _database.close();
+    _databaseClosed = true;
+  }
+
   @override
   void dispose() {
-    if (_ownsDatabase) {
+    if (_ownsDatabase && !_databaseClosed) {
       unawaited(_database.close());
     }
     super.dispose();
@@ -75,6 +82,7 @@ class _PetUniverseAppState extends State<PetUniverseApp> {
           return AppShell(
             database: _database,
             workspaceIds: snapshot.data!,
+            onPrepareForUpdate: _prepareForUpdate,
           );
         },
       ),
