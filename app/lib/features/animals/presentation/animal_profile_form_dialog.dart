@@ -76,8 +76,6 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
   final Set<String> _touchedAttributeIds = {};
 
   String? _selectedSpeciesId;
-  String _attributeValueType = 'text';
-  String _attributeAppliesTo = 'both';
   String _memberTrackingMode = 'not_tracked';
   DateTime? _birthDate;
   DateTime? _acquiredAt;
