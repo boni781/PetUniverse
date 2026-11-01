@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'workspaces.dart';
 
+@DataClassName('SpeciesData')
 class Species extends Table {
   TextColumn get id => text()();
   TextColumn get origin => text()();
