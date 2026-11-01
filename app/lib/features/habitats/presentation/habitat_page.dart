@@ -81,7 +81,7 @@ class _HabitatPageState extends State<HabitatPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan habitat: ' + error.toString())),
+        SnackBar(content: Text('Gagal menyimpan habitat: $error')),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -94,7 +94,7 @@ class _HabitatPageState extends State<HabitatPage> {
       builder: (context) => AlertDialog(
         title: const Text('Arsipkan habitat?'),
         content: Text(
-          'Habitat "' + habitat.name + '" tidak akan menerima penempatan baru. '
+          'Habitat "${habitat.name}" tidak akan menerima penempatan baru. '
           'Riwayat yang sudah ada tetap disimpan.',
         ),
         actions: [
@@ -123,7 +123,7 @@ class _HabitatPageState extends State<HabitatPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Habitat belum dapat diarsipkan: ' + error.toString())),
+        SnackBar(content: Text('Habitat belum dapat diarsipkan: $error')),
       );
     }
   }
@@ -154,7 +154,7 @@ class _HabitatPageState extends State<HabitatPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Penempatan — ' + habitat.name,
+                        'Penempatan — ${habitat.name}',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w800,
                             ),
@@ -210,7 +210,7 @@ class _HabitatPageState extends State<HabitatPage> {
                                     ScaffoldMessenger.of(this.context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          'Gagal menyimpan penempatan: ' + error.toString(),
+                                          'Gagal menyimpan penempatan: $error',
                                         ),
                                       ),
                                     );
@@ -240,7 +240,7 @@ class _HabitatPageState extends State<HabitatPage> {
                             if (snapshot.hasError) {
                               return Center(
                                 child: Text(
-                                  'Riwayat gagal dibaca: ' + snapshot.error.toString(),
+                                  'Riwayat gagal dibaca: ${snapshot.error}',
                                 ),
                               );
                             }
@@ -267,10 +267,7 @@ class _HabitatPageState extends State<HabitatPage> {
                                 final role = assignment.assignmentRole == 'primary'
                                     ? 'Habitat utama'
                                     : 'Habitat sekunder';
-                                final range = _dateLabel(assignment.validFrom) +
-                                    (active
-                                        ? ' – Sekarang'
-                                        : ' – ' + _dateLabel(assignment.validTo!));
+                                final range = '${_dateLabel(assignment.validFrom)} – ${active ? 'Sekarang' : _dateLabel(assignment.validTo!)}';
 
                                 return ListTile(
                                   contentPadding: EdgeInsets.zero,
@@ -286,10 +283,7 @@ class _HabitatPageState extends State<HabitatPage> {
                                     style: const TextStyle(fontWeight: FontWeight.w700),
                                   ),
                                   subtitle: Text(
-                                    role + ' • ' + range +
-                                        (assignment.note == null
-                                            ? ''
-                                            : '\n' + assignment.note!),
+                                    '$role • $range${assignment.note == null ? '' : '\n${assignment.note}'}',
                                   ),
                                   isThreeLine: assignment.note != null,
                                   trailing: active
@@ -315,8 +309,7 @@ class _HabitatPageState extends State<HabitatPage> {
                                               ScaffoldMessenger.of(this.context).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
-                                                    'Penempatan belum dapat ditutup: ' +
-                                                        error.toString(),
+                                                    'Penempatan belum dapat ditutup: $error',
                                                   ),
                                                 ),
                                               );
@@ -341,7 +334,7 @@ class _HabitatPageState extends State<HabitatPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal membuka penempatan: ' + error.toString())),
+        SnackBar(content: Text('Gagal membuka penempatan: $error')),
       );
     }
   }
@@ -509,10 +502,7 @@ class _HabitatCard extends StatelessWidget {
     final archived = habitat.status == 'archived';
     final capacity = habitat.capacityValue == null
         ? 'Kapasitas belum ditentukan'
-        : 'Kapasitas ' +
-            habitat.capacityValue.toString() +
-            ' ' +
-            (habitat.capacityUnit ?? '');
+        : 'Kapasitas ${habitat.capacityValue} ${habitat.capacityUnit ?? ''}';
 
     return Card(
       margin: EdgeInsets.zero,
@@ -555,7 +545,7 @@ class _HabitatCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    _habitatTypeLabel(habitat.habitatType) + ' • ' + capacity,
+                    '${_habitatTypeLabel(habitat.habitatType)} • $capacity',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
@@ -961,9 +951,7 @@ class _AssignmentFormDialogState extends State<_AssignmentFormDialog> {
                     DropdownMenuItem(
                       value: profile.id,
                       child: Text(
-                        profile.displayName +
-                            ' · ' +
-                            (profile.recordKind == 'group' ? 'Kelompok' : 'Individu'),
+                        '${profile.displayName} · ${profile.recordKind == 'group' ? 'Kelompok' : 'Individu'}',
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1001,7 +989,7 @@ class _AssignmentFormDialogState extends State<_AssignmentFormDialog> {
                 child: OutlinedButton.icon(
                   onPressed: _pickDate,
                   icon: const Icon(Icons.calendar_today_outlined),
-                  label: Text('Mulai: ' + _dateLabel(_validFrom)),
+                  label: Text('Mulai: ${_dateLabel(_validFrom)}'),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1161,7 +1149,7 @@ String _dateLabel(DateTime value) {
   final local = value.toLocal();
   final day = local.day.toString().padLeft(2, '0');
   final month = local.month.toString().padLeft(2, '0');
-  return day + '/' + month + '/' + local.year.toString();
+  return '$day/$month/${local.year}';
 }
 
 String _habitatTypeLabel(String value) {
