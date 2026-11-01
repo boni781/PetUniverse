@@ -174,7 +174,7 @@ versioned installer so the updater helper is present.
   background updates.
 - The first release must be published to a public release repository for the
   unauthenticated updater to work.
-- The release builder currently targets Windows x64.
+- The release builder targets Windows x64 and Android (signed APK and AAB). iOS builds are handled separately on macOS.
 - The release builder expects the Windows Flutter scaffold to be committed in
   `app/windows/`.
 - The PowerShell installer and updater must be tested on a Windows machine
