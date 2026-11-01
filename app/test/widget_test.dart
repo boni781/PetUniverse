@@ -104,6 +104,36 @@ void main() {
     });
   });
 
+  testWidgets('desktop navigation opens habitat management', (tester) async {
+    await _withPetUniverse(
+      tester,
+      (database) async {
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Habitat').first);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Habitat dan kandang'), findsOneWidget);
+        expect(find.text('Tambah habitat'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+      viewSize: const Size(1440, 900),
+    );
+  });
+
+  testWidgets('mobile More menu opens habitat management', (tester) async {
+    await _withPetUniverse(tester, (database) async {
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lainnya').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Habitat dan kandang'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Habitat dan kandang'), findsOneWidget);
+      expect(find.text('Belum ada habitat'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   testWidgets('desktop layout renders without overflow', (tester) async {
     await _withPetUniverse(
       tester,
