@@ -662,6 +662,12 @@ class _HabitatFormDialogState extends State<_HabitatFormDialog> {
     'other',
   ];
 
+  List<String> get _availableTypes {
+    final values = [..._types];
+    if (!values.contains(_habitatType)) values.add(_habitatType);
+    return values;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -710,7 +716,10 @@ class _HabitatFormDialogState extends State<_HabitatFormDialog> {
   Widget build(BuildContext context) {
     final parentOptions = widget.habitats
         .where((item) => item.id != widget.initialHabitat?.id)
-        .where((item) => item.status != 'archived')
+        .where(
+          (item) =>
+              item.status != 'archived' || item.id == _parentHabitatId,
+        )
         .toList();
 
     return AlertDialog(
@@ -751,7 +760,7 @@ class _HabitatFormDialogState extends State<_HabitatFormDialog> {
                     border: OutlineInputBorder(),
                   ),
                   items: [
-                    for (final type in _types)
+                    for (final type in _availableTypes)
                       DropdownMenuItem(
                         value: type,
                         child: Text(_habitatTypeLabel(type)),
