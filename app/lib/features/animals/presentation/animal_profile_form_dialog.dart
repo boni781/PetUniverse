@@ -73,6 +73,7 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
   List<SpeciesAttributeDefinition> _definitions = [];
   final Map<String, Object?> _attributeValues = {};
   final Map<String, String> _numericInputs = {};
+  final Set<String> _touchedAttributeIds = {};
 
   String? _selectedSpeciesId;
   String _speciesCategory = 'mammal';
@@ -139,6 +140,7 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
       _definitions = [];
       _attributeValues.clear();
       _numericInputs.clear();
+      _touchedAttributeIds.clear();
     });
     await _loadAttributeDefinitions();
   }
@@ -311,6 +313,10 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
     for (final definition in _definitions) {
       final id = definition.id;
       Object? value = _attributeValues[id];
+      if (definition.valueType == 'boolean' &&
+          !_touchedAttributeIds.contains(id)) {
+        value = null;
+      }
 
       if (definition.valueType == 'integer' ||
           definition.valueType == 'decimal' ||
@@ -796,7 +802,10 @@ class _AnimalProfileFormDialogState extends State<AnimalProfileFormDialog> {
           contentPadding: EdgeInsets.zero,
           title: Text(label),
           value: _attributeValues[id] as bool? ?? false,
-          onChanged: (value) => setState(() => _attributeValues[id] = value),
+          onChanged: (value) => setState(() {
+            _attributeValues[id] = value;
+            _touchedAttributeIds.add(id);
+          }),
         );
       case 'date':
         final date = _attributeValues[id] as DateTime?;
