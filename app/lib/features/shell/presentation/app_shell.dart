@@ -13,11 +13,13 @@ class AppShell extends StatefulWidget {
   const AppShell({
     required this.database,
     required this.workspaceIds,
+    required this.onPrepareForUpdate,
     super.key,
   });
 
   final AppDatabase database;
   final Map<WorkspaceMode, String> workspaceIds;
+  final Future<void> Function() onPrepareForUpdate;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -77,7 +79,7 @@ class _AppShellState extends State<AppShell> {
       );
     }
     if (_index == 7) {
-      return const UpdatePage();
+      return UpdatePage(onPrepareForUpdate: widget.onPrepareForUpdate);
     }
     if (_index == 0) {
       final workspaceId = widget.workspaceIds[_mode]!;
