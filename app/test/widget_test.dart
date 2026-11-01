@@ -134,6 +134,19 @@ void main() {
     });
   });
 
+  testWidgets('mobile navigation opens care management', (tester) async {
+    await _withPetUniverse(tester, (database) async {
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Jadwal').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Jadwal perawatan'), findsOneWidget);
+      expect(find.text('Buat jadwal perawatan'), findsOneWidget);
+      expect(find.text('Belum ada jadwal perawatan'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   testWidgets('desktop layout renders without overflow', (tester) async {
     await _withPetUniverse(
       tester,
