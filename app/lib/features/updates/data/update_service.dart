@@ -159,7 +159,10 @@ class UpdateService {
     );
   }
 
-  Future<void> downloadAndStart(UpdateRelease release) async {
+  Future<void> downloadAndStart(
+    UpdateRelease release, {
+    required Future<void> Function() beforeExit,
+  }) async {
     if (!Platform.isWindows) {
       throw const UpdateException(
         'Pemasangan pembaruan otomatis hanya tersedia untuk Windows.',
@@ -240,8 +243,17 @@ class UpdateService {
       );
     }
 
-    // The detached PowerShell helper waits for this application to exit,
-    // verifies the package, swaps the app directory, then starts the new app.
+    // Close the local Drift database before the process exits. The detached
+    // PowerShell helper waits for this PID, then replaces only program files.
+    try {
+      await beforeExit();
+    } catch (error) {
+      Process.killPid(process.pid);
+      throw UpdateException(
+        'Database lokal gagal ditutup. Pembaruan dibatalkan: $error',
+      );
+    }
+
     exit(0);
   }
 
