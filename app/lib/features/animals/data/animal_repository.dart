@@ -34,6 +34,113 @@ class AnimalRepository {
         .getSingleOrNull();
   }
 
+  Future<AnimalProfileDetail?> getProfileDetail({
+    required String workspaceId,
+    required String profileId,
+  }) async {
+    final profile = await (_database.select(_database.animalProfiles)
+          ..where(
+            (table) =>
+                table.id.equals(profileId) &
+                table.workspaceId.equals(workspaceId) &
+                table.deletedAt.isNull(),
+          ))
+        .getSingleOrNull();
+    if (profile == null) return null;
+
+    final species = profile.speciesId == null
+        ? null
+        : await (_database.select(_database.species)
+              ..where((table) => table.id.equals(profile.speciesId!)))
+            .getSingleOrNull();
+
+    final individualDetails = profile.recordKind == 'individual'
+        ? await (_database.select(_database.individualDetails)
+              ..where((table) => table.animalProfileId.equals(profileId)))
+            .getSingleOrNull()
+        : null;
+    final groupDetails = profile.recordKind == 'group'
+        ? await (_database.select(_database.groupDetails)
+              ..where((table) => table.animalProfileId.equals(profileId)))
+            .getSingleOrNull()
+        : null;
+
+    final storedValues = await (_database.select(_database.speciesAttributeValues)
+          ..where(
+            (table) =>
+                table.animalProfileId.equals(profileId) &
+                table.workspaceId.equals(workspaceId) &
+                table.deletedAt.isNull(),
+          )
+          ..orderBy([(table) => OrderingTerm.asc(table.createdAt)]))
+        .get();
+
+    final attributes = <AnimalAttributeSnapshot>[];
+    for (final stored in storedValues) {
+      final definition = await (_database.select(
+                _database.speciesAttributeDefinitions,
+              )
+              ..where(
+                (table) =>
+                    table.id.equals(stored.attributeDefinitionId),
+              ))
+          .getSingleOrNull();
+      if (definition == null) continue;
+
+      final decoded = jsonDecode(stored.valueJson);
+      final rawValue = decoded is Map<String, dynamic>
+          ? decoded['value']
+          : null;
+      Object? value = rawValue;
+      if (definition.valueType == 'date' && rawValue is String) {
+        value = DateTime.tryParse(rawValue);
+      } else if (definition.valueType == 'multiple_choice' &&
+          rawValue is List) {
+        value = rawValue.cast<String>();
+      }
+
+      attributes.add(
+        AnimalAttributeSnapshot(
+          definition: definition,
+          value: value,
+          unitCode: stored.unitCode,
+        ),
+      );
+    }
+
+    return AnimalProfileDetail(
+      profile: profile,
+      species: species,
+      individualDetails: individualDetails,
+      groupDetails: groupDetails,
+      attributes: attributes,
+    );
+  }
+
+  Future<AnimalProfile> _requireProfile({
+    required String workspaceId,
+    required String profileId,
+    required String recordKind,
+  }) async {
+    final profile = await (_database.select(_database.animalProfiles)
+          ..where(
+            (table) =>
+                table.id.equals(profileId) &
+                table.workspaceId.equals(workspaceId) &
+                table.deletedAt.isNull(),
+          ))
+        .getSingleOrNull();
+
+    if (profile == null) {
+      throw StateError('Profil hewan tidak ditemukan pada workspace ini.');
+    }
+    if (profile.recordKind != recordKind) {
+      throw StateError('Jenis profil tidak sesuai dengan operasi yang diminta.');
+    }
+    return profile;
+  }
+
+
   Future<String> createIndividual({
     required String workspaceId,
     required String displayName,
@@ -233,6 +340,253 @@ class AnimalRepository {
     });
 
     return id;
+  }
+
+  Future<void> updateIndividual({
+    required String workspaceId,
+    required String profileId,
+    required String displayName,
+    String? speciesId,
+    String? notes,
+    String? sexCode,
+    DateTime? birthDate,
+    String? birthDatePrecision,
+    DateTime? acquiredAt,
+    String? lifeStageCode,
+    Map<String, Object?> attributeValues = const {},
+  }) async {
+    final now = DateTime.now().toUtc();
+    final name = _validateName(displayName);
+    final normalizedSex = _normalizeOptionalText(sexCode);
+    final normalizedLifeStage = _normalizeOptionalText(lifeStageCode);
+    final precision = _validateBirthDate(
+      birthDate: birthDate,
+      precision: birthDatePrecision,
+    );
+
+    await _database.transaction(() async {
+      await _requireProfile(
+        workspaceId: workspaceId,
+        profileId: profileId,
+        recordKind: 'individual',
+      );
+      final normalizedAttributes = await _validateAttributeValues(
+        workspaceId: workspaceId,
+        speciesId: speciesId,
+        recordKind: 'individual',
+        values: attributeValues,
+      );
+
+      await (_database.update(_database.animalProfiles)
+            ..where(
+              (table) =>
+                  table.id.equals(profileId) &
+                  table.workspaceId.equals(workspaceId) &
+                  table.deletedAt.isNull(),
+            ))
+          .write(
+        AnimalProfilesCompanion(
+          displayName: Value(name),
+          speciesId: Value(speciesId),
+          notes: Value(_normalizeOptionalText(notes)),
+          updatedAt: Value(now),
+        ),
+      );
+
+      final updatedDetails = await (_database.update(_database.individualDetails)
+            ..where((table) => table.animalProfileId.equals(profileId)))
+          .write(
+        IndividualDetailsCompanion(
+          sexCode: Value(normalizedSex),
+          birthDate: Value(birthDate?.toUtc()),
+          birthDatePrecision: Value(precision),
+          acquiredAt: Value(acquiredAt?.toUtc()),
+          lifeStageCode: Value(normalizedLifeStage),
+          lifeStageSource: Value(
+            normalizedLifeStage == null ? null : 'user_selected',
+          ),
+        ),
+      );
+      if (updatedDetails != 1) {
+        throw StateError('Detail individu tidak ditemukan.');
+      }
+
+      await _replaceAttributeRows(
+        workspaceId: workspaceId,
+        animalProfileId: profileId,
+        values: normalizedAttributes,
+        now: now,
+      );
+
+      await _insertOutbox(
+        operationId: _uuid.v4(),
+        workspaceId: workspaceId,
+        entityId: profileId,
+        operationKind: 'update',
+        payload: {
+          'id': profileId,
+          'workspaceId': workspaceId,
+          'recordKind': 'individual',
+          'displayName': name,
+          'speciesId': speciesId,
+          'notes': _normalizeOptionalText(notes),
+          'individualDetails': {
+            'sexCode': normalizedSex,
+            'birthDate': birthDate?.toUtc().toIso8601String(),
+            'birthDatePrecision': precision,
+            'acquiredAt': acquiredAt?.toUtc().toIso8601String(),
+            'lifeStageCode': normalizedLifeStage,
+            'lifeStageSource':
+                normalizedLifeStage == null ? null : 'user_selected',
+          },
+          'attributes': normalizedAttributes
+              .map((value) => {
+                    'definitionId': value.definition.id,
+                    'value': value.serializedValue,
+                    'unitCode': value.definition.unitCode,
+                  })
+              .toList(),
+          'updatedAt': now.toIso8601String(),
+        },
+        createdAt: now,
+      );
+    });
+  }
+
+  Future<void> updateGroup({
+    required String workspaceId,
+    required String profileId,
+    required String displayName,
+    String? speciesId,
+    String? notes,
+    String? groupPurpose,
+    String memberTrackingMode = 'not_tracked',
+    int? reportedCount,
+    DateTime? countObservedAt,
+    String? countNote,
+    Map<String, Object?> attributeValues = const {},
+  }) async {
+    final now = DateTime.now().toUtc();
+    final name = _validateName(displayName);
+    final normalizedPurpose = _normalizeOptionalText(groupPurpose);
+    final normalizedCountNote = _normalizeOptionalText(countNote);
+
+    _validateGroupCount(
+      memberTrackingMode: memberTrackingMode,
+      reportedCount: reportedCount,
+      countObservedAt: countObservedAt,
+    );
+
+    await _database.transaction(() async {
+      await _requireProfile(
+        workspaceId: workspaceId,
+        profileId: profileId,
+        recordKind: 'group',
+      );
+      final normalizedAttributes = await _validateAttributeValues(
+        workspaceId: workspaceId,
+        speciesId: speciesId,
+        recordKind: 'group',
+        values: attributeValues,
+      );
+
+      await (_database.update(_database.animalProfiles)
+            ..where(
+              (table) =>
+                  table.id.equals(profileId) &
+                  table.workspaceId.equals(workspaceId) &
+                  table.deletedAt.isNull(),
+            ))
+          .write(
+        AnimalProfilesCompanion(
+          displayName: Value(name),
+          speciesId: Value(speciesId),
+          notes: Value(_normalizeOptionalText(notes)),
+          updatedAt: Value(now),
+        ),
+      );
+
+      final updatedDetails = await (_database.update(_database.groupDetails)
+            ..where((table) => table.animalProfileId.equals(profileId)))
+          .write(
+        GroupDetailsCompanion(
+          groupPurpose: Value(normalizedPurpose),
+          memberTrackingMode: Value(memberTrackingMode),
+          reportedCount: Value(reportedCount),
+          countObservedAt: Value(countObservedAt?.toUtc()),
+          countNote: Value(normalizedCountNote),
+        ),
+      );
+      if (updatedDetails != 1) {
+        throw StateError('Detail kelompok tidak ditemukan.');
+      }
+
+      await _replaceAttributeRows(
+        workspaceId: workspaceId,
+        animalProfileId: profileId,
+        values: normalizedAttributes,
+        now: now,
+      );
+
+      await _insertOutbox(
+        operationId: _uuid.v4(),
+        workspaceId: workspaceId,
+        entityId: profileId,
+        operationKind: 'update',
+        payload: {
+          'id': profileId,
+          'workspaceId': workspaceId,
+          'recordKind': 'group',
+          'displayName': name,
+          'speciesId': speciesId,
+          'notes': _normalizeOptionalText(notes),
+          'groupDetails': {
+            'groupPurpose': normalizedPurpose,
+            'memberTrackingMode': memberTrackingMode,
+            'reportedCount': reportedCount,
+            'countObservedAt': countObservedAt?.toUtc().toIso8601String(),
+            'countNote': normalizedCountNote,
+          },
+          'attributes': normalizedAttributes
+              .map((value) => {
+                    'definitionId': value.definition.id,
+                    'value': value.serializedValue,
+                    'unitCode': value.definition.unitCode,
+                  })
+              .toList(),
+          'updatedAt': now.toIso8601String(),
+        },
+        createdAt: now,
+      );
+    });
+  }
+
+  Future<void> _replaceAttributeRows({
+    required String workspaceId,
+    required String animalProfileId,
+    required List<_NormalizedAttributeValue> values,
+    required DateTime now,
+  }) async {
+    await (_database.update(_database.speciesAttributeValues)
+          ..where(
+            (table) =>
+                table.workspaceId.equals(workspaceId) &
+                table.animalProfileId.equals(animalProfileId) &
+                table.deletedAt.isNull(),
+          ))
+        .write(
+      SpeciesAttributeValuesCompanion(
+        deletedAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+
+    await _insertAttributeRows(
+      workspaceId: workspaceId,
+      animalProfileId: animalProfileId,
+      values: values,
+      now: now,
+    );
   }
 
   Future<List<_NormalizedAttributeValue>> _validateAttributeValues({
@@ -498,6 +852,7 @@ class AnimalRepository {
     required String operationId,
     required String workspaceId,
     required String entityId,
+    String operationKind = 'create',
     required Map<String, Object?> payload,
     required DateTime createdAt,
   }) async {
@@ -507,7 +862,7 @@ class AnimalRepository {
             workspaceId: workspaceId,
             entityKind: 'animal_profile',
             entityId: entityId,
-            operationKind: 'create',
+            operationKind: operationKind,
             payloadVersion: const Value(1),
             payloadJson: jsonEncode(payload),
             createdAt: createdAt,
@@ -529,4 +884,32 @@ class _NormalizedAttributeValue {
 
   final SpeciesAttributeDefinition definition;
   final String serializedValue;
+}
+
+class AnimalProfileDetail {
+  const AnimalProfileDetail({
+    required this.profile,
+    required this.species,
+    required this.individualDetails,
+    required this.groupDetails,
+    required this.attributes,
+  });
+
+  final AnimalProfile profile;
+  final SpeciesData? species;
+  final IndividualDetail? individualDetails;
+  final GroupDetail? groupDetails;
+  final List<AnimalAttributeSnapshot> attributes;
+}
+
+class AnimalAttributeSnapshot {
+  const AnimalAttributeSnapshot({
+    required this.definition,
+    required this.value,
+    required this.unitCode,
+  });
+
+  final SpeciesAttributeDefinition definition;
+  final Object? value;
+  final String? unitCode;
 }
