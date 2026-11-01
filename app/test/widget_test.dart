@@ -15,7 +15,10 @@ AppDatabase createTestDatabase() {
 void main() {
   testWidgets('shows the dashboard and workspace selector', (tester) async {
     final database = createTestDatabase();
-    addTearDown(database.close);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await database.close();
+    });
 
     tester.view.physicalSize = const Size(800, 900);
     tester.view.devicePixelRatio = 1;
@@ -34,7 +37,10 @@ void main() {
 
   testWidgets('switches workspace to Professional', (tester) async {
     final database = createTestDatabase();
-    addTearDown(database.close);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await database.close();
+    });
 
     tester.view.physicalSize = const Size(800, 900);
     tester.view.devicePixelRatio = 1;
@@ -55,7 +61,10 @@ void main() {
 
   testWidgets('mobile navigation opens local animal management', (tester) async {
     final database = createTestDatabase();
-    addTearDown(database.close);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await database.close();
+    });
 
     tester.view.physicalSize = const Size(800, 900);
     tester.view.devicePixelRatio = 1;
@@ -75,7 +84,10 @@ void main() {
 
   testWidgets('a new individual profile appears after local save', (tester) async {
     final database = createTestDatabase();
-    addTearDown(database.close);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await database.close();
+    });
 
     tester.view.physicalSize = const Size(800, 900);
     tester.view.devicePixelRatio = 1;
@@ -104,7 +116,10 @@ void main() {
 
   testWidgets('desktop layout renders without overflow', (tester) async {
     final database = createTestDatabase();
-    addTearDown(database.close);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await database.close();
+    });
 
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
