@@ -147,6 +147,22 @@ void main() {
     });
   });
 
+  testWidgets('More menu opens the application update screen',
+      (tester) async {
+    await _withPetUniverse(tester, (database) async {
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lainnya').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pembaruan aplikasi'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Pembaruan PetUniverse'), findsOneWidget);
+      expect(find.text('Periksa pembaruan'), findsOneWidget);
+      expect(find.textContaining('Versi terpasang'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   testWidgets('desktop layout renders without overflow', (tester) async {
     await _withPetUniverse(
       tester,
