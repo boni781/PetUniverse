@@ -70,10 +70,11 @@ For example, create a separate public repository in GitHub named
 }
 ```
 
-The release builder refuses to publish if the configured release repository
-is private. This prevents publishing a release that the in-app updater cannot
-download. A public repository is not required to contain application source
-code; only the versioned release assets are uploaded there.
+The release builder checks repository visibility before changing version
+metadata or starting a Windows build. It stops immediately if the configured
+release repository is private, preventing an unusable release. A public
+repository is not required to contain application source code; only the
+versioned release assets are uploaded there.
 
 GitHub documents that unauthenticated access is available for public release
 resources, while private release reads require repository access:
@@ -113,7 +114,8 @@ It then creates these assets in `release-output/`:
 | Asset | Purpose |
 |---|---|
 | `PetUniverse-Windows-x64-vX.Y.Z.zip` | Built application files used by installer and updater |
-| `PetUniverse-Setup-vX.Y.Z.ps1` | User-level Windows installer |\n| `PetUniverse-Setup-vX.Y.Z.cmd` | Double-click launcher for the PowerShell installer |
+| `PetUniverse-Setup-vX.Y.Z.ps1` | User-level Windows installer |
+| `PetUniverse-Setup-vX.Y.Z.cmd` | Double-click launcher for the PowerShell installer |
 | `SHA256SUMS.txt` | ZIP integrity check |
 | `PetUniverse-version-vX.Y.Z.json` | Machine-readable release manifest |
 
@@ -121,8 +123,9 @@ After reviewing the assets, confirm publication. The builder pushes only the
 managed version metadata to the configured source branch and uploads the
 release assets to `release_repository`.
 
-If the release repository is private, local build artifacts are retained but
-publication is blocked until the repository visibility/configuration is fixed.
+If the release repository is private, the release builder stops before
+changing version metadata or building artifacts. Configure a public release
+repository first, then run the release builder again.
 
 ## Install PetUniverse
 
