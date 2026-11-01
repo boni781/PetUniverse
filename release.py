@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parent
 CONFIG_FILE = ROOT / "release_config.json"
 RELEASE_OUTPUT = ROOT / "release-output"
 INSTALLER_TEMPLATE = ROOT / "installer" / "install_windows.ps1"
+INSTALLER_LAUNCHER_TEMPLATE = ROOT / "installer" / "launch_installer.cmd"
 UPDATE_HELPER = ROOT / "updater" / "apply_update.ps1"
 
 
@@ -324,7 +325,7 @@ def create_assets(
     title: str,
     config: dict[str, Any],
 ) -> dict[str, Path]:
-    for required in (INSTALLER_TEMPLATE, UPDATE_HELPER):
+    for required in (INSTALLER_TEMPLATE, INSTALLER_LAUNCHER_TEMPLATE, UPDATE_HELPER):
         if not required.is_file():
             raise FileNotFoundError(f"File pendukung tidak ditemukan: {required}")
 
@@ -392,6 +393,11 @@ def create_assets(
     installer_path = RELEASE_OUTPUT / f"PetUniverse-Setup-{tag}.ps1"
     installer_path.write_text(installer_text, encoding="utf-8")
 
+    launcher_text = INSTALLER_LAUNCHER_TEMPLATE.read_text(encoding="utf-8-sig")
+    launcher_text = launcher_text.replace("__APP_VERSION__", tag)
+    launcher_path = RELEASE_OUTPUT / f"PetUniverse-Setup-{tag}.cmd"
+    launcher_path.write_text(launcher_text, encoding="utf-8")
+
     manifest_path = RELEASE_OUTPUT / f"PetUniverse-version-{tag}.json"
     manifest = {
         "name": "PetUniverse",
@@ -412,6 +418,7 @@ def create_assets(
     return {
         "zip": zip_path,
         "installer": installer_path,
+        "launcher": launcher_path,
         "checksums": checksum_path,
         "manifest": manifest_path,
     }
@@ -447,6 +454,7 @@ def publish_release(
         "gh", "release", "create", f"v{version}",
         str(assets["zip"]),
         str(assets["installer"]),
+        str(assets["launcher"]),
         str(assets["checksums"]),
         str(assets["manifest"]),
         "--repo", str(config["release_repository"]),
