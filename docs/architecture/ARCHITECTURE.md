@@ -36,24 +36,28 @@ Users, Workspaces, Memberships, Animals, AnimalGroups, Species, SpeciesAttribute
 
 This list is conceptual. Relationship cardinality, ownership, deletion behavior, and normalization remain to be designed.
 
-## 5. Species extensibility
+## 5. Detailed logical data model
+
+See [DATA_MODEL.md](DATA_MODEL.md) for the proposed workspace, species, animal/group, habitat, care, health, measurement, attachment, and synchronization entities, along with their invariants. It is a logical proposal, not a physical database or migration specification.
+
+## 6. Species extensibility
 
 Prefer data-driven species definitions and attribute schemas. Species-specific forms should be driven by definitions rather than hard-coded assumptions in generic profile screens.
 
 Store measurement value, unit, context, timestamp, and source. Unknown values must not be coerced to zero.
 
-## 6. Backend and authorization
+## 7. Backend and authorization
 
-A cloud backend is required for account identity, workspace collaboration, synchronization, and backup. The backend technology is not yet selected.
+A cloud backend is required for account identity, workspace collaboration, synchronization, and backup. The proposed direction is Supabase PostgreSQL, Auth, and private Storage; see [STORAGE_AND_SYNC.md](STORAGE_AND_SYNC.md). This remains a proposal pending review and a non-production proof of concept.
 
-Workspace membership and role checks must be enforced by server-side authorization. Client-side hiding is not a security boundary.
+The proposed workspace roles and baseline capabilities are documented in [ROLE_PERMISSION_MATRIX.md](../security/ROLE_PERMISSION_MATRIX.md). Workspace membership and role checks must be enforced by server-side authorization. Client-side hiding is not a security boundary. If Supabase is selected, use explicit grants and Row Level Security (RLS) policies for every exposed workspace-owned table and private Storage object.
 
-## 7. Content updates
+## 8. Content updates
 
 Separate application-core releases from content packages. Content packages may include species catalog data, care rules, templates, and assets. A manifest should carry product, package type, version, minimum app version, schema version, asset name, checksum, and release notes.
 
 Download into staging, validate compatibility and integrity, activate safely, and support rollback. Never overwrite user databases, attachments, credentials, or private configuration.
 
-## 8. Platform distribution
+## 9. Platform distribution
 
 Android core updates must follow Google Play or permitted APK distribution. iOS builds must be signed and distributed using Apple-compliant mechanisms such as App Store or TestFlight. GitHub Releases can host metadata and permitted artifacts, but does not replace these distribution mechanisms.
